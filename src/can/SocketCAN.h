@@ -10,6 +10,9 @@
 
 #include "SocketCANObserver.h"
 
+namespace edu
+{
+
 /**
  * @class SocketCAN
  * @brief CAN communication class. This class uses a threaded listener and observer pattern notifying observer class instances.
@@ -83,5 +86,7 @@ private:
 
   std::mutex _mutex;
 };
+
+} // namespace
 
 #endif //_SOCKETCAN_H_

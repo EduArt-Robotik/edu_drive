@@ -6,6 +6,9 @@
 #include "geometry_msgs/PoseStamped.h"
 #include <fcntl.h>
 
+namespace edu
+{
+
 EduDrive::EduDrive(ChassisParams &cp, MotorParams &mp, SocketCAN &can, bool verbosity)
 {
     _subJoy = _nh.subscribe<sensor_msgs::Joy>("joy", 1, &EduDrive::joyCallback, this);
@@ -27,13 +30,14 @@ EduDrive::EduDrive(ChassisParams &cp, MotorParams &mp, SocketCAN &can, bool verb
 
     _omegaMax = 1.0;
 
-    _mc.push_back(new MotorControllerCAN(&can, 0, mp, verbosity));
-    _mc.push_back(new MotorControllerCAN(&can, 1, mp, verbosity));
+    _mc.push_back(new MotorController(&can, 0, mp, verbosity));
+    _mc.push_back(new MotorController(&can, 1, mp, verbosity));
+    _carrier = new CarrierBoard(&can, verbosity);
 }
 
 EduDrive::~EduDrive()
 {
-    for (std::vector<MotorControllerCAN *>::iterator it = std::begin(_mc); it != std::end(_mc); ++it)
+    for (std::vector<MotorController *>::iterator it = std::begin(_mc); it != std::end(_mc); ++it)
     {
         (*it)->disable();
         delete *it;
@@ -67,7 +71,7 @@ void EduDrive::enable()
     write(fd, "1", 1);
 	 close(fd);
 	    
-    for (std::vector<MotorControllerCAN *>::iterator it = std::begin(_mc); it != std::end(_mc); ++it)
+    for (std::vector<MotorController *>::iterator it = std::begin(_mc); it != std::end(_mc); ++it)
         (*it)->enable();
 }
 
@@ -88,7 +92,7 @@ void EduDrive::disable()
 		 close(fd);
     }
 	 
-    for (std::vector<MotorControllerCAN *>::iterator it = std::begin(_mc); it != std::end(_mc); ++it)
+    for (std::vector<MotorController *>::iterator it = std::begin(_mc); it != std::end(_mc); ++it)
         (*it)->disable();
 }
 
@@ -138,7 +142,7 @@ void EduDrive::controlMotors(float vFwd, float vLeft, float omega)
     float w[2];
     w[0] = vFwd / _rpm2ms;
     w[1] = vFwd / _rpm2ms;
-    for (std::vector<MotorControllerCAN *>::iterator it = std::begin(_mc); it != std::end(_mc); ++it)
+    for (std::vector<MotorController *>::iterator it = std::begin(_mc); it != std::end(_mc); ++it)
         (*it)->setRPM(w);
 }
 
@@ -146,7 +150,7 @@ void EduDrive::receiveCAN()
 {
     std_msgs::Float32MultiArray msgRPM;
     std_msgs::ByteMultiArray msgEnabled;
-    for (std::vector<MotorControllerCAN *>::iterator it = std::begin(_mc); it != std::end(_mc); ++it)
+    for (std::vector<MotorController *>::iterator it = std::begin(_mc); it != std::end(_mc); ++it)
     {
         if ((*it)->waitForSync())
         {
@@ -175,3 +179,5 @@ void EduDrive::checkLaggyConnection()
         disable();
     }
 }
+
+} // namespace

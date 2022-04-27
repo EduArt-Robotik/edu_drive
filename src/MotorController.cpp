@@ -1,12 +1,15 @@
-#include "MotorControllerCAN.h"
+#include "MotorController.h"
 #include <iostream>
 #include <cmath>
 #include <string.h>
 #include <iomanip>
 #include <unistd.h>
-#include "../interface/can/canprotocol.h"
+#include "can/canprotocol.h"
 
-MotorControllerCAN::MotorControllerCAN(SocketCAN* can, unsigned int canID, MotorParams params, bool verbosity)
+namespace edu
+{
+
+MotorController::MotorController(SocketCAN* can, unsigned int canID, MotorParams params, bool verbosity)
 {
   _verbosity = verbosity;
   
@@ -147,31 +150,31 @@ MotorControllerCAN::MotorControllerCAN(SocketCAN* can, unsigned int canID, Motor
   }
 }
 
-MotorControllerCAN::~MotorControllerCAN()
+MotorController::~MotorController()
 {
   stop();
 }
 
-bool MotorControllerCAN::enable()
+bool MotorController::enable()
 {
   _cf.can_dlc = 1;
   _cf.data[0] = CMD_MOTOR_ENABLE;
   return _can->send(&_cf);
 }
 
-bool MotorControllerCAN::disable()
+bool MotorController::disable()
 {
   _cf.can_dlc = 1;
   _cf.data[0] = CMD_MOTOR_DISABLE;
   return _can->send(&_cf);
 }
 
-bool MotorControllerCAN::getEnableState()
+bool MotorController::getEnableState()
 {
   return _enabled;
 }
 
-bool MotorControllerCAN::broadcastExternalSync()
+bool MotorController::broadcastExternalSync()
 {
   canid_t idTmp = _cf.can_id;
   _cf.can_id = _broadcastAddress;
@@ -182,7 +185,7 @@ bool MotorControllerCAN::broadcastExternalSync()
   return retval;
 }
 
-bool MotorControllerCAN::configureResponse(enum CanResponse mode)
+bool MotorController::configureResponse(enum CanResponse mode)
 {
   _cf.can_dlc = 1;
   if(mode==CAN_RESPONSE_RPM)
@@ -192,7 +195,7 @@ bool MotorControllerCAN::configureResponse(enum CanResponse mode)
   return _can->send(&_cf);
 }
 
-bool MotorControllerCAN::invertEncoderPolarity(bool invert)
+bool MotorController::invertEncoderPolarity(bool invert)
 {
   _cf.can_dlc = 2;
   _cf.data[0] = CMD_MOTOR_INVERTENC;
@@ -203,12 +206,12 @@ bool MotorControllerCAN::invertEncoderPolarity(bool invert)
   return _can->send(&_cf);
 }
 
-unsigned short MotorControllerCAN::getCanId()
+unsigned short MotorController::getCanId()
 {
   return _cf.can_id & 0xF;
 }
 
-bool MotorControllerCAN::setTimeout(unsigned short timeoutInMillis)
+bool MotorController::setTimeout(unsigned short timeoutInMillis)
 {
   _cf.can_dlc = 3;
   _cf.data[0] = CMD_MOTOR_SETTIMEOUT;
@@ -220,12 +223,12 @@ bool MotorControllerCAN::setTimeout(unsigned short timeoutInMillis)
   return retval;
 }
 
-unsigned short MotorControllerCAN::getTimeout()
+unsigned short MotorController::getTimeout()
 {
   return _params.timeout;
 }
 
-bool MotorControllerCAN::setGearRatio(float gearRatio)
+bool MotorController::setGearRatio(float gearRatio)
 {
   bool retval = sendFloat(CMD_MOTOR_GEARRATIO, gearRatio);
   retval &= sendFloat(CMD_MOTOR_GEARRATIO2, gearRatio);
@@ -234,12 +237,12 @@ bool MotorControllerCAN::setGearRatio(float gearRatio)
   return retval;
 }
 
-float MotorControllerCAN::getGearRatio()
+float MotorController::getGearRatio()
 {
   return _params.gearRatio;
 }
 
-bool MotorControllerCAN::setEncoderTicksPerRev(float encoderTicksPerRev)
+bool MotorController::setEncoderTicksPerRev(float encoderTicksPerRev)
 {
   bool retval = sendFloat(CMD_MOTOR_TICKSPERREV, encoderTicksPerRev);
   retval &= sendFloat(CMD_MOTOR_TICKSPERREV2, encoderTicksPerRev);
@@ -248,7 +251,7 @@ bool MotorControllerCAN::setEncoderTicksPerRev(float encoderTicksPerRev)
   return retval;
 }
 
-bool MotorControllerCAN::setFrequencyScale(unsigned short scale)
+bool MotorController::setFrequencyScale(unsigned short scale)
 {
   bool retval = false;
 
@@ -265,12 +268,12 @@ bool MotorControllerCAN::setFrequencyScale(unsigned short scale)
   return retval;
 }
 
-unsigned short MotorControllerCAN::getFrequencyScale()
+unsigned short MotorController::getFrequencyScale()
 {
   return _params.frequencyScale;
 }
 
-bool MotorControllerCAN::setMaxPulseWidth(unsigned char pulse)
+bool MotorController::setMaxPulseWidth(unsigned char pulse)
 {
   bool retval = false;
 
@@ -286,7 +289,7 @@ bool MotorControllerCAN::setMaxPulseWidth(unsigned char pulse)
   return retval;
 }
 
-bool MotorControllerCAN::setPWM(int pwm[2])
+bool MotorController::setPWM(int pwm[2])
 {
   _cf.can_dlc = 3;
 
@@ -300,7 +303,7 @@ bool MotorControllerCAN::setPWM(int pwm[2])
   return _can->send(&_cf);
 }
 
-bool MotorControllerCAN::setRPM(float rpm[2])
+bool MotorController::setRPM(float rpm[2])
 {
   _cf.can_dlc = 5;
 
@@ -317,7 +320,7 @@ bool MotorControllerCAN::setRPM(float rpm[2])
   return _can->send(&_cf);
 }
 
-void MotorControllerCAN::getWheelResponse(float response[2])
+void MotorController::getWheelResponse(float response[2])
 {
   if(_params.responseMode == CAN_RESPONSE_RPM)
   {
@@ -331,7 +334,7 @@ void MotorControllerCAN::getWheelResponse(float response[2])
   }
 }
 
-bool MotorControllerCAN::setKp(float kp)
+bool MotorController::setKp(float kp)
 {
   bool retval = sendFloat(CMD_MOTOR_CTL_KP, kp);
   if(retval)
@@ -339,12 +342,12 @@ bool MotorControllerCAN::setKp(float kp)
   return retval;
 }
 
-float MotorControllerCAN::getKp()
+float MotorController::getKp()
 {
   return _params.kp;
 }
 
-bool MotorControllerCAN::setKi(float ki)
+bool MotorController::setKi(float ki)
 {
   bool retval = sendFloat(CMD_MOTOR_CTL_KI, ki);
   if(retval)
@@ -352,12 +355,12 @@ bool MotorControllerCAN::setKi(float ki)
   return retval;
 }
 
-float MotorControllerCAN::getKi()
+float MotorController::getKi()
 {
   return _params.ki;
 }
 
-bool MotorControllerCAN::setKd(float kd)
+bool MotorController::setKd(float kd)
 {
   bool retval = sendFloat(CMD_MOTOR_CTL_KD, kd);
   if(retval)
@@ -365,12 +368,12 @@ bool MotorControllerCAN::setKd(float kd)
   return retval;
 }
 
-float MotorControllerCAN::getKd()
+float MotorController::getKd()
 {
   return _params.kd;
 }
 
-bool MotorControllerCAN::setAntiWindup(bool activate)
+bool MotorController::setAntiWindup(bool activate)
 {
    bool retval = false;
   _cf.can_dlc = 2;
@@ -382,12 +385,12 @@ bool MotorControllerCAN::setAntiWindup(bool activate)
   return retval;
 }
 
-bool MotorControllerCAN::getAntiWindup()
+bool MotorController::getAntiWindup()
 {
   return _params.antiWindup;
 }
 
-bool MotorControllerCAN::setInputWeight(float weight)
+bool MotorController::setInputWeight(float weight)
 {
   bool retval = sendFloat(CMD_MOTOR_CTL_INPUTFILTER, weight);
   if(retval)
@@ -395,12 +398,12 @@ bool MotorControllerCAN::setInputWeight(float weight)
   return retval;
 }
 
-float MotorControllerCAN::getInputWeight()
+float MotorController::getInputWeight()
 {
   return _params.inputWeight;
 }
 
-void MotorControllerCAN::notify(struct can_frame* frame)
+void MotorController::notify(struct can_frame* frame)
 {
   if(frame->can_dlc==6)
   {
@@ -428,7 +431,7 @@ void MotorControllerCAN::notify(struct can_frame* frame)
   }
 }
 
-bool MotorControllerCAN::waitForSync(unsigned int timeoutInMillis)
+bool MotorController::waitForSync(unsigned int timeoutInMillis)
 {
   unsigned int cnt=0;
   bool synchronized = (_idSyncReceive==_idSyncSend);
@@ -440,7 +443,7 @@ bool MotorControllerCAN::waitForSync(unsigned int timeoutInMillis)
   return synchronized;
 }
 
-void MotorControllerCAN::stop()
+void MotorController::stop()
 {
   _cf.can_dlc = 3;
   _cf.data[0] = CMD_MOTOR_SETPWM;
@@ -449,7 +452,7 @@ void MotorControllerCAN::stop()
   _can->send(&_cf);
 }
 
-bool MotorControllerCAN::sendFloat(int cmd, float f)
+bool MotorController::sendFloat(int cmd, float f)
 {
   _cf.can_dlc = 5;
 
@@ -464,3 +467,5 @@ bool MotorControllerCAN::sendFloat(int cmd, float f)
 
   return _can->send(&_cf);
 }
+
+} // namespace

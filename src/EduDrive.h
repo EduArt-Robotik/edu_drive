@@ -4,7 +4,11 @@
 #include "ros/ros.h"
 #include "sensor_msgs/Joy.h"
 #include "geometry_msgs/Twist.h"
-#include "drive/MotorControllerCAN.h"
+#include "MotorController.h"
+#include "CarrierBoard.h"
+
+namespace edu
+{
 
 struct WheelParams
 {
@@ -123,7 +127,11 @@ private:
     float               _omegaMax;      // Maximum angular rate [rad/s]
     float               _rpm2ms;        // Conversion factor between [rpm] and [m/s]
 
-    std::vector<MotorControllerCAN*>  _mc;
+    std::vector<MotorController*>  _mc;
+
+    CarrierBoard* _carrier;
 };
+
+} // namespace
 
 #endif //__EDU_DRIVE_H

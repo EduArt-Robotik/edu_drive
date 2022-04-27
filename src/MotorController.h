@@ -1,8 +1,11 @@
 #ifndef _MOTORCONTROLLERCAN_H_
 #define _MOTORCONTROLLERCAN_H_
 
-#include "../interface/can/SocketCAN.h"
+#include "can/SocketCAN.h"
 #include <vector>
+
+namespace edu
+{
 
 enum CanResponse
 {
@@ -70,11 +73,11 @@ struct MotorParams
 
 /**
  * @class MotorControllerCAN
- * @brief CAN interface for Evocortex Centipede motor controller.
+ * @brief CAN interface for EduArt's robot motor controller.
  * @author Stefan May
- * @date 13.05.2018
+ * @date 27.04.2022
  */
-class MotorControllerCAN : public SocketCANObserver
+class MotorController : public SocketCANObserver
 {
 public:
   /**
@@ -84,12 +87,12 @@ public:
    * @param[in] params motor parameters
    * @param[in] verbosity verbosity output flag
    */
-  MotorControllerCAN(SocketCAN* can, unsigned int canID, MotorParams params, bool verbosity=0);
+  MotorController(SocketCAN* can, unsigned int canID, MotorParams params, bool verbosity=0);
 
   /**
    * Destructor
    */
-  ~MotorControllerCAN();
+  ~MotorController();
 
   /**
    * Enable device
@@ -342,3 +345,5 @@ private:
 };
 
 #endif /* _MOTORCONTROLLERCAN_H_ */
+
+} // namespace

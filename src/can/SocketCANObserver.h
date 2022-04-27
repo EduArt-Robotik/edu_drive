@@ -3,6 +3,9 @@
 
 #include <linux/can.h>
 
+namespace edu
+{
+
 /**
  * @class SocketCANObserver
  * @brief Abstract observer class. Derived classes get notified according their CAN bus identifiers.
@@ -44,5 +47,7 @@ private:
 
   canid_t _canid;
 };
+
+} // namespace
 
 #endif // _SOCKETCANOBSERVER_H_

@@ -1,5 +1,8 @@
 #include "SocketCANObserver.h"
 
+namespace edu
+{
+
 SocketCANObserver::SocketCANObserver()
 {
   _canid = 0x0;
@@ -19,3 +22,5 @@ canid_t SocketCANObserver::getCANId()
 {
   return _canid;
 }
+
+} // namespace

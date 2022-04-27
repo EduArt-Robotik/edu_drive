@@ -7,8 +7,8 @@ int main(int argc, char *argv[])
 {
     ros::init(argc, argv, "edu_drive_node");
 
-    ChassisParams chassisParams;
-    MotorParams   motorParams;
+    edu::ChassisParams chassisParams;
+    edu::MotorParams   motorParams;
 
     std::string canInterface;
     int maxPulseWidth;
@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
     nh.param("frequencyScale",  frequencyScale,                     32);
     nh.param("inputWeight",     motorParams.inputWeight,            0.8f);
     nh.param("maxPulseWidth",   maxPulseWidth,                      63);
-    nh.param("timeout",         timeout, 					              300);
+    nh.param("timeout",         timeout, 					        300);
     nh.param("gearRatio",       motorParams.gearRatio,              70.f);
     nh.param("encoderRatio",    motorParams.encoderRatio,           64.f);
     nh.param("rpmMax",          motorParams.rpmMax,                 140.f);
@@ -57,15 +57,15 @@ int main(int argc, char *argv[])
 	 motorParams.frequencyScale = frequencyScale;
 	 motorParams.maxPulseWidth  = maxPulseWidth;
 
-    motorParams.responseMode = CAN_RESPONSE_RPM;
-    if(responseMode != CAN_RESPONSE_RPM)
-       motorParams.responseMode = CAN_RESPONSE_POS;
+    motorParams.responseMode = edu::CAN_RESPONSE_RPM;
+    if(responseMode != edu::CAN_RESPONSE_RPM)
+       motorParams.responseMode = edu::CAN_RESPONSE_POS;
 
-    SocketCAN can(canInterface);
+    edu::SocketCAN can(canInterface);
     can.startListener();
     std::cout << "CAN Interface: " << canInterface << std::endl;
 
     bool verbosity = false;
-    EduDrive drive(chassisParams, motorParams, can, verbosity);
+    edu::EduDrive drive(chassisParams, motorParams, can, verbosity);
     drive.run();
 }

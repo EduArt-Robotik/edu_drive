@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include <string.h>
 
+namespace edu
+{
 
 SocketCAN::SocketCAN(std::string devFile)
 {
@@ -154,3 +156,4 @@ bool SocketCAN::closePort()
   return retval;
 }
 
+} // namespace
