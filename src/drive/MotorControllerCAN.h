@@ -104,6 +104,12 @@ public:
   bool disable();
 
   /**
+   * Get state of motor controller (enabled / disabled)
+   * @return enable state
+   */ 
+  bool getEnableState();
+
+  /**
    * Send synchronization signal, resetting a counter in order to have a common time basis on all controllers
    * @return successful transmission of synchronization signal
    */
@@ -329,6 +335,10 @@ private:
   float            _rpm[2];
 
   short            _pos[2];
+  
+  bool             _enabled;
+  
+  bool             _verbosity;
 };
 
 #endif /* _MOTORCONTROLLERCAN_H_ */

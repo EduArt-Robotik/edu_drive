@@ -60,7 +60,7 @@ public:
      * @brief Constructor
      *
      */
-    EduDrive(ChassisParams& cp, MotorParams& mp, SocketCAN& can);
+    EduDrive(ChassisParams& cp, MotorParams& mp, SocketCAN& can, bool verbosity=false);
 
     /**
      * @brief Destroy the Edu Drive object
@@ -95,6 +95,10 @@ public:
 
     void velocityCallback(const geometry_msgs::Twist::ConstPtr& cmd);
 
+    void receiveCAN();
+    
+    void checkLaggyConnection();
+    
 private:
 
     void controlMotors(float vFwd, float vLeft, float omega);
@@ -103,6 +107,7 @@ private:
     ros::Subscriber     _subJoy;
     ros::Subscriber     _subVel;
     ros::ServiceServer  _srvEnable;
+    ros::Publisher      _pubEnabled;
     ros::Publisher      _pubRPM;
     ros::Publisher      _pubVoltage;
     ros::Publisher      _pubIMU;

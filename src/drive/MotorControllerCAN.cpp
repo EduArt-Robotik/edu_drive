@@ -8,7 +8,9 @@
 
 MotorControllerCAN::MotorControllerCAN(SocketCAN* can, unsigned int canID, MotorParams params, bool verbosity)
 {
-  if(verbosity)
+  _verbosity = verbosity;
+  
+  if(_verbosity)
   {
     std::cout << std::endl << "--- Motor #" << canID << " parameters ---" << std::endl;
     std::cout << "frequencyScale = " << params.frequencyScale << std::endl;
@@ -41,6 +43,7 @@ MotorControllerCAN::MotorControllerCAN(SocketCAN* can, unsigned int canID, Motor
   _rpm[0] = 0.f;
   _rpm[1] = 0.f;
 
+  _enabled       = false;
   _idSyncSend    = 0;
   _idSyncReceive = 0;
 
@@ -161,6 +164,11 @@ bool MotorControllerCAN::disable()
   _cf.can_dlc = 1;
   _cf.data[0] = CMD_MOTOR_DISABLE;
   return _can->send(&_cf);
+}
+
+bool MotorControllerCAN::getEnableState()
+{
+  return _enabled;
 }
 
 bool MotorControllerCAN::broadcastExternalSync()
@@ -394,7 +402,7 @@ float MotorControllerCAN::getInputWeight()
 
 void MotorControllerCAN::notify(struct can_frame* frame)
 {
-  if(frame->can_dlc==5)
+  if(frame->can_dlc==6)
   {
     if(frame->data[0] == RESPONSE_MOTOR_RPM)
     {
@@ -413,8 +421,10 @@ void MotorControllerCAN::notify(struct can_frame* frame)
       _pos[0] = (frame->data[1] | (frame->data[2] << 8));
       _pos[1] = (frame->data[3] | (frame->data[4] << 8));
     }
+    _enabled = (frame->data[5] != 0);
     _idSyncReceive = _idSyncSend;
-    std::cout << "Sync received: " << _idSyncReceive << std::endl;
+    if(_verbosity)
+	    std::cout << "CAN #" << _cf.can_id << ": Sync received (" << _idSyncReceive << ")" << std::endl;
   }
 }
 
