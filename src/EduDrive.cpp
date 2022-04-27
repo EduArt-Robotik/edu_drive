@@ -14,12 +14,12 @@ EduDrive::EduDrive(ChassisParams &cp, MotorParams &mp, SocketCAN &can, bool verb
     _subJoy = _nh.subscribe<sensor_msgs::Joy>("joy", 1, &EduDrive::joyCallback, this);
     _subVel = _nh.subscribe<geometry_msgs::Twist>("vel/teleop", 10, &EduDrive::velocityCallback, this);
   
-    _pubEnabled = _nh.advertise<std_msgs::ByteMultiArray>("enabled", 1);
-    _pubRPM     = _nh.advertise<std_msgs::Float32MultiArray>("rpm", 1);
-    _pubVoltage = _nh.advertise<std_msgs::Float32>("voltage", 1);
-    _pubTemp    = _nh.advertise<std_msgs::Float32>("temperature", 1);
-    _pubIMU     = _nh.advertise<sensor_msgs::Imu>("imu", 1);
-    _pubPose    = _nh.advertise<geometry_msgs::PoseStamped>("pose", 1);
+    _pubEnabled        = _nh.advertise<std_msgs::ByteMultiArray>("enabled", 1);
+    _pubRPM            = _nh.advertise<std_msgs::Float32MultiArray>("rpm", 1);
+    _pubVoltage        = _nh.advertise<std_msgs::Float32>("voltage", 1);
+    _pubTemp           = _nh.advertise<std_msgs::Float32>("temperature", 1);
+    _pubIMU            = _nh.advertise<sensor_msgs::Imu>("imu", 1);
+    _pubOrientation    = _nh.advertise<geometry_msgs::PoseStamped>("pose", 1);
 
     _chassisParams = cp;
     _motorParams = mp;
@@ -167,6 +167,27 @@ void EduDrive::receiveCAN()
     }
     _pubRPM.publish(msgRPM);       
     _pubEnabled.publish(msgEnabled);
+    
+    std_msgs::Float32 msgTemperature;
+    msgTemperature.data = _carrier->getTemperature();
+    _pubTemp.publish(msgTemperature);
+    
+    double q[4];
+    _carrier->getOrientation(q);
+    geometry_msgs::PoseStamped msgOrientation;
+    static unsigned int seq = 0;
+    msgOrientation.header.seq = seq++;
+    msgOrientation.header.stamp = ros::Time::now();
+    msgOrientation.header.frame_id = "base_link";
+    msgOrientation.pose.position.x = 0;
+    msgOrientation.pose.position.y = 0;
+    msgOrientation.pose.position.z = 0;
+    msgOrientation.pose.orientation.w = q[0];
+    msgOrientation.pose.orientation.x = q[1];
+    msgOrientation.pose.orientation.y = q[2];
+    msgOrientation.pose.orientation.z = q[3];
+    _pubOrientation.publish(msgOrientation);
+    
 }
 
 void EduDrive::checkLaggyConnection()

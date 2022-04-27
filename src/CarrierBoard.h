@@ -21,12 +21,16 @@ public:
    * @param[in] params motor parameters
    * @param[in] verbosity verbosity output flag
    */
-  CarrierBoard(SocketCAN* can, bool verbosity=0);
+  CarrierBoard(SocketCAN* can, bool verbosity=false);
 
   /**
    * Destructor
    */
   ~CarrierBoard();
+  
+  void getOrientation(double q[4]);
+  
+  float getTemperature();
 
 private:
 
@@ -44,6 +48,9 @@ private:
 
     double _q[4];  // Orientation data as quaternion (layout [w x y z])
 
+    float _temperature; // Temperature of surface of carrier board
+    
+    bool _verbosity;
 };
 
 } // namespace

@@ -115,7 +115,7 @@ private:
     ros::Publisher      _pubRPM;
     ros::Publisher      _pubVoltage;
     ros::Publisher      _pubIMU;
-    ros::Publisher      _pubPose;
+    ros::Publisher      _pubOrientation;
     ros::Publisher      _pubTemp;
 
     ros::Time           _lastCmd;       // Time elapsed since last call
