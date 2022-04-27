@@ -108,8 +108,12 @@ private:
 
     ros::Time           _lastCmd;       // Time elapsed since last call
 
+    ChassisParams       _chassisParams;
+    MotorParams         _motorParams;
+  
     float               _vMax;          // Maximum linear velocity [m/s]
     float               _omegaMax;      // Maximum angular rate [rad/s]
+    float               _rpm2ms;        // Conversion factor between [rpm] and [m/s]
 
     std::vector<MotorControllerCAN*>  _mc;
 };

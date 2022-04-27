@@ -13,6 +13,8 @@ int main(int argc, char *argv[])
     std::string canInterface;
     int maxPulseWidth;
     int frequencyScale;
+    int timeout;
+    int responseMode;
 
     // Assign motor channels to motor/wheel mounting
     ros::NodeHandle nh("~");
@@ -33,16 +35,31 @@ int main(int argc, char *argv[])
     nh.param("chRearRight",     chassisParams.rearRight.channel,    1);
     nh.param("direction",       chassisParams.direction,            1);
     nh.param("canInterface",    canInterface, std::string("can0"));
+    nh.param("frequencyScale",  frequencyScale,                     32);
+    nh.param("inputWeight",     motorParams.inputWeight,            0.8f);
+    nh.param("maxPulseWidth",   maxPulseWidth,                      63);
+    nh.param("timeout",         timeout, 					              300);
     nh.param("gearRatio",       motorParams.gearRatio,              70.f);
     nh.param("encoderRatio",    motorParams.encoderRatio,           64.f);
     nh.param("rpmMax",          motorParams.rpmMax,                 140.f);
-    nh.param("frequencyScale",  frequencyScale,                     32);
-    nh.param("maxPulseWidth",   maxPulseWidth,                      63);
-    nh.param("inputWeight",     motorParams.inputWeight,            0.8f);
-    nh.param("kp",              motorParams.kp,                     1.f);
-    nh.param("ki",              motorParams.ki,                     0.f);
+    nh.param("responseMode",    responseMode,                       0);
+    nh.param("kp",              motorParams.kp,                     0.5f);
+    nh.param("ki",              motorParams.ki,                     300.f);
     nh.param("kd",              motorParams.kd,                     0.f);
     nh.param("antiWindup",      motorParams.antiWindup,             1);
+    nh.param("invertEnc",       motorParams.invertEnc,              1);
+
+    // Ensure a proper range for the timeout value
+    // A lag more than a second should not be tolerated
+	 if(timeout<0 && timeout>1000)
+	    timeout = 300;
+	 motorParams.timeout        = timeout;
+	 motorParams.frequencyScale = frequencyScale;
+	 motorParams.maxPulseWidth  = maxPulseWidth;
+
+    motorParams.responseMode = CAN_RESPONSE_RPM;
+    if(responseMode != CAN_RESPONSE_RPM)
+       motorParams.responseMode = CAN_RESPONSE_POS;
 
     SocketCAN can(canInterface);
     can.startListener();

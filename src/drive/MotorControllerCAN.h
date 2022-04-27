@@ -6,8 +6,8 @@
 
 enum CanResponse
 {
-  CAN_RESPONSE_RPM,
-  CAN_RESPONSE_POS
+  CAN_RESPONSE_RPM=0,
+  CAN_RESPONSE_POS=1
 };
 
 struct MotorParams

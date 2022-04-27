@@ -4,7 +4,7 @@
 #include <string.h>
 #include <iomanip>
 #include <unistd.h>
-#include "canprotocol.h"
+#include "../interface/can/canprotocol.h"
 
 MotorControllerCAN::MotorControllerCAN(SocketCAN* can, unsigned int canID, MotorParams params, bool verbosity)
 {
@@ -45,72 +45,91 @@ MotorControllerCAN::MotorControllerCAN(SocketCAN* can, unsigned int canID, Motor
   _idSyncReceive = 0;
 
   bool retval = true;
+  
   if(!setFrequencyScale(params.frequencyScale))
   {
     std::cout << "# Setting frequency scaling parameter failed for device " << canID << std::endl;
     retval = false;
   }
   usleep(1000);
+  
   if(!enable())
   {
     std::cout << "# Enabling motor controller failed for device " << canID << std::endl;
     retval = false;
   }
   usleep(1000);
-  if(!setMaxPulseWidth(params.maxPulseWidth))
-  {
-    std::cout << "# Setting maximum pulse width failed for device " << canID << std::endl;
-    retval = false;
-  }
-  usleep(1000);
-  if(!setGearRatio(params.gearRatio))
-  {
-    std::cout << "# Setting gear ratio failed for device " << canID << std::endl;
-    retval = false;
-  }
-  usleep(1000);
-  if(!setEncoderTicksPerRev(params.encoderRatio))
-  {
-    std::cout << "# Setting encoder parameters failed for device " << canID << std::endl;
-    retval = false;
-  }
-  usleep(1000);
-  if(!setKp(params.kp))
-  {
-    std::cout << "# Setting proportional factor of PID controller failed for device " << canID << std::endl;
-    retval = false;
-  }
-  usleep(1000);
-  if(!setKi(params.ki))
-  {
-    std::cout << "# Setting integration factor of PID controller failed for device " << canID << std::endl;
-    retval = false;
-  }
-  usleep(1000);
-  if(!setKd(params.kd))
-  {
-    std::cout << "# Setting differential factor of PID controller failed for device " << canID << std::endl;
-    retval = false;
-  }
-  usleep(1000);
-  if(!setAntiWindup(params.antiWindup))
-  {
-    std::cout << "# Setting differential factor of PID controller failed for device " << canID << std::endl;
-    retval = false;
-  }
-  usleep(1000);
+  
   if(!setInputWeight(params.inputWeight))
   {
     std::cout << "# Setting differential factor of PID controller failed for device " << canID << std::endl;
     retval = false;
   }
   usleep(1000);
+  
+  if(!setMaxPulseWidth(params.maxPulseWidth))
+  {
+    std::cout << "# Setting maximum pulse width failed for device " << canID << std::endl;
+    retval = false;
+  }
+  usleep(1000);
+
+  if(!setTimeout(params.timeout))
+  {
+    std::cout << "# Setting timeout failed for device " << canID << std::endl;
+    retval = false;
+  }
+  usleep(1000);
+  
+  if(!setGearRatio(params.gearRatio))
+  {
+    std::cout << "# Setting gear ratio failed for device " << canID << std::endl;
+    retval = false;
+  }
+  usleep(1000);
+  
+  if(!setEncoderTicksPerRev(params.encoderRatio))
+  {
+    std::cout << "# Setting encoder parameters failed for device " << canID << std::endl;
+    retval = false;
+  }
+  usleep(1000);
+  
+  if(!setKp(params.kp))
+  {
+    std::cout << "# Setting proportional factor of PID controller failed for device " << canID << std::endl;
+    retval = false;
+  }
+  usleep(1000);
+  
+  if(!setKi(params.ki))
+  {
+    std::cout << "# Setting integration factor of PID controller failed for device " << canID << std::endl;
+    retval = false;
+  }
+  usleep(1000);
+  
+  if(!setKd(params.kd))
+  {
+    std::cout << "# Setting differential factor of PID controller failed for device " << canID << std::endl;
+    retval = false;
+  }
+  usleep(1000);
+  
+  if(!setAntiWindup(params.antiWindup))
+  {
+    std::cout << "# Setting differential factor of PID controller failed for device " << canID << std::endl;
+    retval = false;
+  }
+  usleep(1000);
+  
   if(!configureResponse(params.responseMode))
   {
     std::cout << "# Setting response mode failed for device " << canID << std::endl;
     retval = false;
   }
   usleep(1000);
+  
   if(!invertEncoderPolarity(params.invertEnc))
   {
     std::cout << "# Setting encoder polarity failed for device " << canID << std::endl;

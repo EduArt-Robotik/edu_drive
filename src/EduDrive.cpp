@@ -1,10 +1,19 @@
 #include "EduDrive.h"
+#include "std_msgs/Float32MultiArray.h"
 
 EduDrive::EduDrive(ChassisParams &cp, MotorParams &mp, SocketCAN &can)
 {
     _subJoy = _nh.subscribe<sensor_msgs::Joy>("joy", 1, &EduDrive::joyCallback, this);
 
-    _vMax = 1.0;
+    _pubRPM = _nh.advertise<std_msgs::Float32MultiArray>("rpm", 1);
+
+    _chassisParams = cp;
+    _motorParams = mp;
+    
+    _rpm2ms = cp.wheelDiameter * M_PI / 60.f;
+
+    _vMax = mp.rpmMax * _rpm2ms;
+
     _omegaMax = 1.0;
 
     bool verbosity = false;
@@ -89,13 +98,16 @@ void EduDrive::joyCallback(const sensor_msgs::Joy::ConstPtr &joy)
     float omega = throttle * turn * _omegaMax;
 
     controlMotors(vFwd, vLeft, omega);
+    
+    _lastCmd = ros::Time::now();
 }
 
 void EduDrive::controlMotors(float vFwd, float vLeft, float omega)
 {
     float w[2];
-    w[0] = vFwd * 100.f;
-    w[1] = vFwd * 100.f;
+    w[0] = vFwd / _rpm2ms;
+    w[1] = vFwd / _rpm2ms;
+    //std::cout << "#w " << w[0] << ", w[1]: " << w[1];
     for (std::vector<MotorControllerCAN *>::iterator it = std::begin(_mc); it != std::end(_mc); ++it)
         (*it)->setRPM(w);
     for (std::vector<MotorControllerCAN *>::iterator it = std::begin(_mc); it != std::end(_mc); ++it)
@@ -104,12 +116,17 @@ void EduDrive::controlMotors(float vFwd, float vLeft, float omega)
         {
             float response[2];
             (*it)->getWheelResponse(response);
-            std::cout << " " << response[0] << " " << response[1];
+            std_msgs::Float32MultiArray msg;
+            msg.data.push_back(response[0]);
+            msg.data.push_back(response[1]);
+            _pubRPM.publish(msg);
+            //std::cout << "# RPM[0]: " << response[0] << ", RPM[1]: " << response[1];
+            
         }
         else
         {
             std::cout << "# Error synchronizing with device" << (*it)->getCanId() << std::endl;
         };
     }
-    std::cout << std::endl;
+    //std::cout << std::endl;
 }
