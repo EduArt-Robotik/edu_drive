@@ -1,12 +1,20 @@
 #include "EduDrive.h"
 #include "std_msgs/Float32MultiArray.h"
+#include "std_msgs/Float32.h"
+#include "sensor_msgs/Imu.h"
+#include "geometry_msgs/PoseStamped.h"
 
 EduDrive::EduDrive(ChassisParams &cp, MotorParams &mp, SocketCAN &can)
 {
     _subJoy = _nh.subscribe<sensor_msgs::Joy>("joy", 1, &EduDrive::joyCallback, this);
-
+    _subVel = _nh.subscribe<geometry_msgs::Twist>("vel/teleop", 10, &EduDrive::velocityCallback, this);
+  
     _pubRPM = _nh.advertise<std_msgs::Float32MultiArray>("rpm", 1);
-
+    _pubVoltage = _nh.advertise<std_msgs::Float32>("voltage", 1);
+    _pubTemp    = _nh.advertise<std_msgs::Float32>("temperature", 1);
+    _pubIMU     = _nh.advertise<sensor_msgs::Imu>("imu", 1);
+    _pubPose    = _nh.advertise<geometry_msgs::PoseStamped>("pose", 1);
+  
     _chassisParams = cp;
     _motorParams = mp;
     
@@ -100,6 +108,11 @@ void EduDrive::joyCallback(const sensor_msgs::Joy::ConstPtr &joy)
     controlMotors(vFwd, vLeft, omega);
     
     _lastCmd = ros::Time::now();
+}
+
+void EduDrive::velocityCallback(const geometry_msgs::Twist::ConstPtr& cmd)
+{
+  controlMotors(cmd->linear.x, cmd->linear.y, cmd->angular.z);
 }
 
 void EduDrive::controlMotors(float vFwd, float vLeft, float omega)

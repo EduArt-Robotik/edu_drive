@@ -3,6 +3,7 @@
 
 #include "ros/ros.h"
 #include "sensor_msgs/Joy.h"
+#include "geometry_msgs/Twist.h"
 #include "drive/MotorControllerCAN.h"
 
 struct WheelParams
@@ -91,6 +92,8 @@ public:
      * @param joy joystick data
      */
     void joyCallback(const sensor_msgs::Joy::ConstPtr& joy);
+
+    void velocityCallback(const geometry_msgs::Twist::ConstPtr& cmd);
 
 private:
 
