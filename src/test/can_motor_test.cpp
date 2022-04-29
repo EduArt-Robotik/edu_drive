@@ -3,39 +3,40 @@
  * @date 23.04.2022
  * @brief Test program for CAN interface
  */
-#include "MotorControllerCAN.h"
+#include "MotorController.h"
 #include <unistd.h>
 #include <iostream>
 #include <cmath>
 
 using namespace std;
 
-#define _INSTANCES 1
+#define _INSTANCES 2
 int main(int argc, char* argv[])
 {
-  MotorParams motorParams;
+  edu::MotorParams motorParams;
   motorParams.frequencyScale = 64;    // PWM frequency: 1/frequencyScale x 500kHz
   motorParams.inputWeight    = 0.8f;  // Smoothing parameter for input values: smoothVal = inputWeight x prevVal + (1.f-inputWeight) x newVal
   motorParams.maxPulseWidth  = 100;   // Set maxPulse to apply full power
-  motorParams.timeout        = 300;
+  motorParams.timeout        = 800;
   motorParams.gearRatio      = 70.f;
   motorParams.encoderRatio   = 64.f;
   motorParams.rpmMax         = 100;
-  motorParams.responseMode   = CAN_RESPONSE_RPM;
-  motorParams.kp             = 1.0f;
-  motorParams.ki             = 100.5f;
+  motorParams.responseMode   = edu::CAN_RESPONSE_RPM;
+  motorParams.kp             = 0.1f;
+  motorParams.ki             = 2.5f;
   motorParams.kd             = 0.f;
   motorParams.antiWindup     = 1;
   motorParams.invertEnc      = 1;
 
-  SocketCAN can(std::string("can0"));
+  edu::SocketCAN can(std::string("can0"));
   can.startListener();
 
-  std::vector<MotorControllerCAN*> mc;
+  std::vector<edu::MotorController*> mc;
   unsigned int dev = 0;
   for(dev=0; dev<_INSTANCES; dev++)
   {
-    MotorControllerCAN* m = new MotorControllerCAN(&can, dev, motorParams, 1);
+    edu::MotorController* m = new edu::MotorController(&can, dev, motorParams, 1);
+    motorParams.invertEnc = 0;
     mc.push_back(m);
   }
 
@@ -53,15 +54,16 @@ int main(int argc, char* argv[])
     {
       w[0] = val;
       mc[dev]->setRPM(w);
+      std::cout << "Setting (" << mc[dev]->getCanId() << "): " << w[0] << " " << w[1] << std::endl;
 	 }
-    std::cout << "setRPM: " << w[0] << " " << w[1] << std::endl;
+
     for(dev=0; dev<mc.size(); dev++)
     {
       if(mc[dev]->waitForSync())
       {
         float response[2];
         mc[dev]->getWheelResponse(response);
-        std::cout << " " << response[0] << " " << response[1];
+        std::cout << "Response (" << mc[dev]->getCanId() << "): " << response[0] << " " << response[1] << std::endl;
       }
       else
       {

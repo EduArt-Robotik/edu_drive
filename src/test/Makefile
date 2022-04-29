@@ -1,13 +1,13 @@
 CC=g++
 CFLAGS=-Wall -std=c++11 -pthread -g
 INC=..
-INC_CAN=../../interface/can
+INC_CAN=../can
 
-SRC_CAN=../../interface/can/SocketCAN.cpp ../../interface/can/SocketCANObserver.cpp ../MotorControllerCAN.cpp
-HDR_CAN=../../interface/can/SocketCAN.h ../../interface/can/SocketCANObserver.h
+SRC_CAN=../can/SocketCAN.cpp ../can/SocketCANObserver.cpp ../MotorController.cpp ../can/canprotocol.cpp
+HDR_CAN=../can/SocketCAN.h ../can/SocketCANObserver.h
 
-SRC_CAN_MOTOR_TEST=can_motor_test.cpp
-HDR_CAN_MOTOR=../MotorControllerCAN.h
+SRC_CAN_MOTOR_TEST=can_motor_test.cpp 
+HDR_CAN_MOTOR=../MotorController.h ../can/canprotocol.h
 
 EXECUTABLE_CAN_MOTOR_TEST=$(SRC_CAN_MOTOR_TEST:.cpp=)
 

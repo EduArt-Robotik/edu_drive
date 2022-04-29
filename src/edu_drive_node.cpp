@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
     can.startListener();
     std::cout << "CAN Interface: " << canInterface << std::endl;
 
-    bool verbosity = false;
+    bool verbosity = true;
     edu::EduDrive drive(chassisParams, motorParams, can, verbosity);
     drive.run();
 }

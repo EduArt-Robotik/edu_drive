@@ -31,6 +31,7 @@ EduDrive::EduDrive(ChassisParams &cp, MotorParams &mp, SocketCAN &can, bool verb
     _omegaMax = 1.0;
 
     _mc.push_back(new MotorController(&can, 0, mp, verbosity));
+    mp.invertEnc=0;
     _mc.push_back(new MotorController(&can, 1, mp, verbosity));
     _carrier = new CarrierBoard(&can, verbosity);
 }
@@ -42,6 +43,7 @@ EduDrive::~EduDrive()
         (*it)->disable();
         delete *it;
     }
+    delete _carrier;
 }
 
 void EduDrive::run()
@@ -143,7 +145,10 @@ void EduDrive::controlMotors(float vFwd, float vLeft, float omega)
     w[0] = vFwd / _rpm2ms;
     w[1] = vFwd / _rpm2ms;
     for (std::vector<MotorController *>::iterator it = std::begin(_mc); it != std::end(_mc); ++it)
+    {
         (*it)->setRPM(w);
+        std::cout << "Setting: " << *it << w[0] << " " << w[1] << std::endl;
+    }
 }
 
 void EduDrive::receiveCAN()

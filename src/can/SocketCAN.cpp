@@ -66,6 +66,7 @@ bool SocketCAN::openPort(const char *port)
 
 bool SocketCAN::send(struct can_frame* frame)
 {
+  usleep(1);
   int retval;
   _mutex.lock();
   retval = write(_soc, frame, sizeof(struct can_frame));
