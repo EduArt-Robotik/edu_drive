@@ -28,9 +28,29 @@ public:
    */
   ~CarrierBoard();
   
+  /**
+   * @brief Get orientation as quaternion
+   * @param[out] q Orientation quaternion (layout: [w x y z])
+   */
   void getOrientation(double q[4]);
   
+  /**
+   * @brief Get temperature of carrier board
+   * @return temperature in degree Celsius
+   */
   float getTemperature();
+
+  /**
+   * @brief Get voltage of MCU supply
+   * @return voltage [V]
+   */
+  float getVoltageMCU();
+
+  /**
+   * @brief Get voltage of power supply of drives
+   * @return voltage [V]
+   */
+  float getVoltageDrive();
 
 private:
 
@@ -46,11 +66,15 @@ private:
 
     int32_t          _broadcastAddress;
 
-    double _q[4];  // Orientation data as quaternion (layout [w x y z])
+    double           _q[4];         // Orientation data as quaternion (layout [w x y z])
 
-    float _temperature; // Temperature of surface of carrier board
+    float            _temperature;  // Temperature of surface of carrier board
+
+    float            _voltageMCU;   // Voltage supply for powering MCU
+
+    float            _voltageDrive; // Voltage supply for powering Drives
     
-    bool _verbosity;
+    bool             _verbosity;
 };
 
 } // namespace

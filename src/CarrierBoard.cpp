@@ -14,7 +14,9 @@ CarrierBoard::CarrierBoard(SocketCAN* can, bool verbosity)
   _q[2] = 0.0;
   _q[3] = 0.0;
 
-  _temperature = -273.f;
+  _temperature  = -273.f;
+  _voltageMCU   = 0.f;
+  _voltageDrive = 0.f;
 
   makeCanStdID(SYSID_RPI_ADAPTER, RPI_ADAPTER, &_inputAddress, &_outputAddress, &_broadcastAddress);
   _cf.can_id = _inputAddress;
@@ -44,6 +46,16 @@ float CarrierBoard::getTemperature()
   return _temperature;
 }
 
+float CarrierBoard::getVoltageMCU()
+{
+  return _voltageMCU;
+}
+
+float CarrierBoard::getVoltageDrive()
+{
+  return _voltageDrive;
+}
+
 void CarrierBoard::notify(struct can_frame* frame)
 {
   if(frame->can_dlc==8)
@@ -57,10 +69,13 @@ void CarrierBoard::notify(struct can_frame* frame)
     if(_verbosity)
       std::cout << "w=" << _q[0] << " x=" << _q[1] << " y=" << _q[2] << " z=" << _q[3] << std::endl;
   }
-  else if(frame->can_dlc==2)
+  else if(frame->can_dlc==6)
   {
-    int16_t* temperature = (int16_t*)frame->data;
-    _temperature = ((float) *temperature) / 100.f;
+    int16_t*   data = (int16_t*)frame->data;
+    uint16_t* udata = (uint16_t*)frame->data;
+    _temperature    = ((float)data[0]) / 100.f;
+    _voltageMCU     = ((float)udata[1]) / 100.f;
+    _voltageDrive   = ((float)udata[2]) / 100.f;
   }
 }
 

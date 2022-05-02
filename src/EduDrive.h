@@ -113,10 +113,11 @@ private:
     ros::ServiceServer  _srvEnable;
     ros::Publisher      _pubEnabled;
     ros::Publisher      _pubRPM;
-    ros::Publisher      _pubVoltage;
+    ros::Publisher      _pubTemp;
+    ros::Publisher      _pubVoltageMCU;
+    ros::Publisher      _pubVoltageDrive;
     ros::Publisher      _pubIMU;
     ros::Publisher      _pubOrientation;
-    ros::Publisher      _pubTemp;
 
     ros::Time           _lastCmd;       // Time elapsed since last call
 

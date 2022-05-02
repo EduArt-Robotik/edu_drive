@@ -16,8 +16,9 @@ EduDrive::EduDrive(ChassisParams &cp, MotorParams &mp, SocketCAN &can, bool verb
   
     _pubEnabled        = _nh.advertise<std_msgs::ByteMultiArray>("enabled", 1);
     _pubRPM            = _nh.advertise<std_msgs::Float32MultiArray>("rpm", 1);
-    _pubVoltage        = _nh.advertise<std_msgs::Float32>("voltage", 1);
     _pubTemp           = _nh.advertise<std_msgs::Float32>("temperature", 1);
+    _pubVoltageMCU     = _nh.advertise<std_msgs::Float32>("voltageMCU", 1);
+    _pubVoltageDrive   = _nh.advertise<std_msgs::Float32>("voltageDrive", 1);
     _pubIMU            = _nh.advertise<sensor_msgs::Imu>("imu", 1);
     _pubOrientation    = _nh.advertise<geometry_msgs::PoseStamped>("pose", 1);
 
@@ -177,6 +178,14 @@ void EduDrive::receiveCAN()
     msgTemperature.data = _carrier->getTemperature();
     _pubTemp.publish(msgTemperature);
     
+    std_msgs::Float32 msgVoltageMCU;
+    msgVoltageMCU.data = _carrier->getVoltageMCU();
+    _pubVoltageMCU.publish(msgVoltageMCU);
+
+    std_msgs::Float32 msgVoltageDrive;
+    msgVoltageDrive.data = _carrier->getVoltageDrive();
+    _pubVoltageDrive.publish(msgVoltageDrive);
+
     double q[4];
     _carrier->getOrientation(q);
     geometry_msgs::PoseStamped msgOrientation;
