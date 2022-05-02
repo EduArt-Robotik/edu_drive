@@ -47,8 +47,7 @@ MotorController::MotorController(SocketCAN* can, unsigned int canID, MotorParams
   _rpm[1] = 0.f;
 
   _enabled       = false;
-  _idSyncSend    = 0;
-  _idSyncReceive = 0;
+  _cntReceived   = 0;
 
   bool retval = true;
   

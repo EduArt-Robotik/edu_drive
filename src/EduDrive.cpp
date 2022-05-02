@@ -9,31 +9,29 @@
 namespace edu
 {
 
-EduDrive::EduDrive(ChassisParams &cp, MotorParams &mp, SocketCAN &can, bool verbosity)
+EduDrive::EduDrive(std::vector<DriveKinematics> kinematics, SocketCAN &can, bool verbosity)
 {
     _subJoy = _nh.subscribe<sensor_msgs::Joy>("joy", 1, &EduDrive::joyCallback, this);
     _subVel = _nh.subscribe<geometry_msgs::Twist>("vel/teleop", 10, &EduDrive::velocityCallback, this);
   
+    // Publisher of motor shields
     _pubEnabled        = _nh.advertise<std_msgs::ByteMultiArray>("enabled", 1);
     _pubRPM            = _nh.advertise<std_msgs::Float32MultiArray>("rpm", 1);
+    
+    // Publisher of carrier shield
     _pubTemp           = _nh.advertise<std_msgs::Float32>("temperature", 1);
     _pubVoltageMCU     = _nh.advertise<std_msgs::Float32>("voltageMCU", 1);
     _pubVoltageDrive   = _nh.advertise<std_msgs::Float32>("voltageDrive", 1);
     _pubIMU            = _nh.advertise<sensor_msgs::Imu>("imu", 1);
     _pubOrientation    = _nh.advertise<geometry_msgs::PoseStamped>("pose", 1);
 
-    _chassisParams = cp;
-    _motorParams = mp;
+    _kinematics = kinematics;
     
-    _rpm2ms = cp.wheelDiameter * M_PI / 60.f;
-
-    _vMax = mp.rpmMax * _rpm2ms;
-
-    _omegaMax = 1.0;
-
-    _mc.push_back(new MotorController(&can, 0, mp, verbosity));
-    mp.invertEnc=0;
-    _mc.push_back(new MotorController(&can, 1, mp, verbosity));
+    for(unsigned int i=0; i<_kinematics.size(); ++i)
+    {
+    	_mc.push_back(new MotorController(&can, _kinematics[i].canID, _kinematics[i].mp, verbosity));
+    }
+    
     _carrier = new CarrierBoard(&can, verbosity);
 }
 
@@ -126,9 +124,12 @@ void EduDrive::joyCallback(const sensor_msgs::Joy::ConstPtr &joy)
     btn9Prev = joy->buttons[9];
     btn10Prev = joy->buttons[10];
 
-    float vFwd = throttle * fwd * _vMax;
-    float vLeft = throttle * left * _vMax;
-    float omega = throttle * turn * _omegaMax;
+    // ToDo: Define a proper calculation routine for vMax and omegaMax
+	 float vMax = 1.f;
+	 float omegaMax = 1.f;
+    float vFwd = throttle * fwd * vMax;
+    float vLeft = throttle * left * vMax;
+    float omega = throttle * turn * omegaMax;
 
     controlMotors(vFwd, vLeft, omega);
     
@@ -142,13 +143,17 @@ void EduDrive::velocityCallback(const geometry_msgs::Twist::ConstPtr& cmd)
 
 void EduDrive::controlMotors(float vFwd, float vLeft, float omega)
 {
-    float w[2];
-    w[0] = vFwd / _rpm2ms;
-    w[1] = vFwd / _rpm2ms;
-    for (std::vector<MotorController *>::iterator it = std::begin(_mc); it != std::end(_mc); ++it)
+    for(unsigned int i=0; i<_kinematics.size(); ++i)
     {
-        (*it)->setRPM(w);
-        std::cout << "Setting: " << *it << w[0] << " " << w[1] << std::endl;
+      float w[2];
+      w[0] = _kinematics[i].kX * vFwd + _kinematics[i].kY * vLeft + _kinematics[i].kOmega * omega;
+      w[1] = 0.f;
+      
+      // Convert from rad/s to rpm
+      w[0] *= 60.f / M_PI;
+      w[1] *= 60.f / M_PI;
+      _mc[i]->setRPM(w);
+      std::cout << "Setting RPM for drive" << i << " to " << w[0] << " " << w[1] << std::endl;
     }
 }
 

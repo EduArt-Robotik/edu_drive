@@ -1,40 +1,28 @@
 <launch>
   <node pkg="edu_drive" type="edu_drive_node" name="edu_drive_node" output="screen">
-    <!-- Distance between wheel/track contact points of left and right side -->
-    <param name="track"         value="0.28"/>
-    
-    <!-- Distance between wheel/track contact points of front and rear axle -->
-    <param name="wheelBase"     value="0.32"/>
-    
-    <!-- Diameter of driving wheel(s). For tracks use the diameter of the pinion -->
-    <param name="wheelDiameter" value="0.1"/>
-    
-        <!-- Channel assignment to motor mounting -->
-    <param name="idFrontLeft"   value="2"/>
-    <param name="chFrontLeft"   value="1"/>
-    <param name="idFrontRight"  value="2"/>
-    <param name="chFrontRight"  value="0"/>
-    <param name="idCenterLeft"  value="1"/>
-    <param name="chCenterLeft"  value="1"/>
-    <param name="idCenterRight" value="1"/>
-    <param name="chCenterRight" value="0"/>
-    <param name="idRearLeft"    value="0"/>
-    <param name="chRearLeft"    value="1"/>
-    <param name="idRearRight"   value="0"/>
-    <param name="chRearRight"   value="0"/>
-    
-    <!-- Socket CAN interface -->
-    <param name="canInterface"       value="can0"/>
-    
-    <param name="frequencyScale"     value="32"/>
-    <param name="maxPulseWidth"      value="127"/>
-    <param name="inputWeight"        value="0.2"/>
+    <!-- Mapping of motor controller channels to kinematic model -->
+    <param name="drives" value="2"/>
+    <!-- Drive kinematics are described as follows: -->
+    <!-- Kinematic vector: [kx, ky, komega] -->
+    <!-- omega_wheel = kx*vx + ky*vy + komega*omega -->
+    <!-- Calculation of kinematic values are for instance: -->
+    <!-- kx = 1/r, ky=1/r, komega=1/r*(length+width)/2 -->
+    <rosparam param="drive0">[0, 0,  10.0, 0.0, -5.0]</rosparam>
+    <rosparam param="drive1">[1, 0, -10.0, 0.0, -5.0]</rosparam>
 
     <!-- Gearmotor/Encoder parameters -->
     <!-- 70:1 Metal Gearmotor 37Dx57L mm with 64 CPR Encoder -->
     <param name="gearRatio"     value="70.0"/>
     <param name="encoderRatio"  value="64.0"/>
     <param name="rpmMax"        value="140.0"/>
+
+    <!-- Parameter of hardware interface -->
+    <param name="frequencyScale"     value="32"/>
+    <param name="maxPulseWidth"      value="100"/>
+    <param name="inputWeight"        value="0.2"/>
+    
+    <!-- Socket CAN interface -->
+    <param name="canInterface"       value="can0"/>
            
     <!-- PID controller parameters -->
     <param name="kp"            value="0.4"/>

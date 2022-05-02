@@ -10,44 +10,14 @@
 namespace edu
 {
 
-struct WheelParams
+struct DriveKinematics
 {
-  int id;      // ID of motor controller board, i.e., CAN ID
-  int channel; // Channel of motor controller board, i.e., either 0 or 1
-};
-
-struct ChassisParams
-{
-  float track;
-  float wheelBase;
-  float wheelDiameter;
-  WheelParams frontLeft;
-  WheelParams frontRight;
-  WheelParams centerLeft;
-  WheelParams centerRight;
-  WheelParams rearLeft;
-  WheelParams rearRight;
-  int   direction;
-
-  ChassisParams()
-  {
-    track               = 0.f;
-    wheelBase           = 0.f;
-    wheelDiameter       = 0.f;
-    frontLeft.id        = 0;
-    frontLeft.channel   = 0;
-    frontRight.id       = 0;
-    frontRight.channel  = 0;
-    centerLeft.id       = 0;
-    centerLeft.channel  = 0;
-    centerRight.id      = 0;
-    centerRight.channel = 0;
-    rearLeft.id         = 0;
-    rearLeft.channel    = 0;
-    rearRight.id        = 0;
-    rearRight.channel   = 0;
-    direction           = 0;
-  }
+   unsigned int canID = 0;
+   unsigned int channel = 0;
+	float kX     = 0.f;
+	float kY     = 0.f;
+	float kOmega = 0.f;
+	MotorParams mp;
 };
 
 
@@ -64,7 +34,7 @@ public:
      * @brief Constructor
      *
      */
-    EduDrive(ChassisParams& cp, MotorParams& mp, SocketCAN& can, bool verbosity=false);
+    EduDrive(std::vector<DriveKinematics> kinematic, SocketCAN& can, bool verbosity=false);
 
     /**
      * @brief Destroy the Edu Drive object
@@ -121,12 +91,7 @@ private:
 
     ros::Time           _lastCmd;       // Time elapsed since last call
 
-    ChassisParams       _chassisParams;
-    MotorParams         _motorParams;
-  
-    float               _vMax;          // Maximum linear velocity [m/s]
-    float               _omegaMax;      // Maximum angular rate [rad/s]
-    float               _rpm2ms;        // Conversion factor between [rpm] and [m/s]
+    std::vector<DriveKinematics> _kinematics;
 
     std::vector<MotorController*>  _mc;
 
