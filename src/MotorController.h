@@ -329,9 +329,7 @@ private:
   
   can_frame        _cf;
 
-  unsigned long    _idSyncSend;
-
-  unsigned long    _idSyncReceive;
+  unsigned long    _cntReceived;
 
   MotorParams      _params;
 

@@ -299,7 +299,6 @@ bool MotorController::setPWM(int pwm[2])
   _cf.data[1] = (char)(vel1 + 0x7F);
   _cf.data[2] = (char)(vel2 + 0x7F);
 
-  _idSyncSend++;
   return _can->send(&_cf);
 }
 
@@ -314,8 +313,6 @@ bool MotorController::setRPM(float rpm[2])
   _cf.data[2] = (char)(vel1)      & 0xFF;
   _cf.data[3] = (char)(vel2 >> 8) & 0xFF;
   _cf.data[4] = (char)(vel2)      & 0xFF;
-
-  _idSyncSend++;
 
   return _can->send(&_cf);
 }
@@ -425,22 +422,21 @@ void MotorController::notify(struct can_frame* frame)
       _pos[1] = (frame->data[3] | (frame->data[4] << 8));
     }
     _enabled = (frame->data[5] != 0);
-    _idSyncReceive = _idSyncSend;
+    _cntReceived++;
     if(_verbosity)
-	    std::cout << "CAN #" << _cf.can_id << ": Sync received (" << _idSyncReceive << ")" << std::endl;
+	    std::cout << "CAN #" << _cf.can_id << ": Received (" << _cntReceived << ")" << std::endl;
   }
 }
 
 bool MotorController::waitForSync(unsigned int timeoutInMillis)
 {
   unsigned int cnt=0;
-  bool synchronized = (_idSyncReceive==_idSyncSend);
-  while(!synchronized && ((cnt++)<timeoutInMillis || timeoutInMillis==0))
+  unsigned int cntAtStart = _cntReceived;
+  while((cntAtStart == _cntReceived) && ((cnt++)<timeoutInMillis || timeoutInMillis==0))
   {
     usleep(1000);
-    synchronized = (_idSyncReceive==_idSyncSend);
   }
-  return synchronized;
+  return (_cntReceived>cntAtStart);
 }
 
 void MotorController::stop()
@@ -462,8 +458,6 @@ bool MotorController::sendFloat(int cmd, float f)
   _cf.data[2] = (*ival & 0x00FF0000) >> 16;
   _cf.data[3] = (*ival & 0x0000FF00) >> 8;
   _cf.data[4] = (*ival & 0x000000FF);
-
-  _idSyncSend++;
 
   return _can->send(&_cf);
 }
