@@ -69,3 +69,5 @@ kx_2 & ky_2 & komega_2\\
 kx_3 & ky_3 & komega_3\\ 
 \end{array}\right)
 $$ for a four-wheeled robot.
+
+ <script type="text/javascript" async src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML">
