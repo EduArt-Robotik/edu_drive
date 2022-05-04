@@ -6,6 +6,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <string.h>
+#include <sys/time.h>
 
 namespace edu
 {
@@ -66,7 +67,16 @@ bool SocketCAN::openPort(const char *port)
 
 bool SocketCAN::send(struct can_frame* frame)
 {
-  usleep(1);
+  static double _timeCom = 0.0;
+  timeval clock;
+  double now = 0.0;
+  do
+  {
+     ::gettimeofday(&clock, 0);
+     now = static_cast<double>(clock.tv_sec) + static_cast<double>(clock.tv_usec) * 1.0e-6;
+  }while((now - _timeCom) < 0.002);
+  _timeCom = now;
+    
   int retval;
   _mutex.lock();
   retval = write(_soc, frame, sizeof(struct can_frame));
@@ -123,7 +133,7 @@ bool SocketCAN::listener()
           for(std::vector<SocketCANObserver*>::iterator it=_observers.begin(); it!=_observers.end(); ++it)
           {
             if((*it)->getCANId()==frame_rd.can_id)
-              (*it)->notify(&frame_rd);
+              (*it)->forwardNotification(&frame_rd);
           }
         }
       }

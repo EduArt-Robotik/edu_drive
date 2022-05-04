@@ -38,6 +38,15 @@ public:
   canid_t getCANId();
 
   /**
+   * Check connection status, i.e., whether the elapsed time since the last message arrival is smaler than a specific timeout.
+   * @param timeoutInMillis timeout in milliseconds
+   * @return connection status
+   */
+  bool checkConnectionStatus(unsigned int timeoutInMillis=100);
+  
+  void forwardNotification(struct can_frame* frame);
+  
+  /**
    * Interface declaration for implementation through inherited classes.
    * @params[in] frame CAN frame
    */
@@ -46,6 +55,10 @@ public:
 private:
 
   canid_t _canid;
+
+  long _seconds;
+  
+  long _usec;
 };
 
 } // namespace

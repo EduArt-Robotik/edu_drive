@@ -141,6 +141,21 @@ namespace edu
     ~MotorController();
 
     /**
+     * Check whether device is initialized after powering on
+     */
+    bool isInitialized();
+
+    /**
+     * Revert initialization state
+     */
+    void deinit();
+
+    /**
+     * Reinitialize device
+     */
+    void reinit();
+
+    /**
      * Enable device
      * @return successful transmission of enable command
      */
@@ -348,19 +363,18 @@ namespace edu
     float getInputWeight();
 
     /**
-     * Check connection status, i.e., verify, whether a CAN message from the corresponding motor node has been received within a defined period of time.
-     * @param[in] timeoutInMillis timeout period in milliseconds.
-     * @return true==successful synchronization
-     */
-    bool checkConnectionStatus(unsigned int timeoutInMillis = 100);
-
-    /**
      * Stop motors
      */
     void stop();
 
   protected:
   private:
+  
+    /**
+     * Initialize motor controllers (adjust parameters)
+     **/
+    void init();
+    
     bool sendFloat(int cmd, float f);
 
     /**
@@ -380,9 +394,9 @@ namespace edu
 
     can_frame _cf;
 
-    unsigned long _cntReceived;
-
     ControllerParams _params;
+
+    bool _isInit;
 
     float _rpm[2];
 
@@ -392,9 +406,9 @@ namespace edu
 
     bool _verbosity;
 
-    uint32_t _seconds;
+    long _seconds;
 
-    uint32_t _usec;
+    long _usec;
   };
 
 #endif /* _MOTORCONTROLLERCAN_H_ */

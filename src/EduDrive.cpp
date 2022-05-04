@@ -27,8 +27,26 @@ namespace edu
         _pubIMU = _nh.advertise<sensor_msgs::Imu>("imu", 1);
         _pubOrientation = _nh.advertise<geometry_msgs::PoseStamped>("pose", 1);
 
+        _carrier = new CarrierBoard(&can, verbosity);
+        
         _vMax = 0.f;
 
+        bool isKinematicsValid = true;
+        for (unsigned int i = 0; i < cp.size(); ++i)
+        {
+            std::vector<MotorParams> motorParams = cp[i].motorParams;
+
+            for (unsigned int j = 0; j < motorParams.size(); ++j)
+            {
+                isKinematicsValid &= (motorParams[j].kinematics.size()==3);
+				}
+        }
+        if(!isKinematicsValid)
+        {
+            std::cout << "#EduDrive Kinematic vectors does not fit to drive concept. Vectors of lenght==3 are expected." << std::endl;
+            exit(1);
+        }
+        
         for (unsigned int i = 0; i < cp.size(); ++i)
         {
             _mc.push_back(new MotorController(&can, cp[i], verbosity));
@@ -36,24 +54,22 @@ namespace edu
             for(unsigned int j=0; j<_mc[i]->getMotorParams().size(); j++)
             {
             	std::vector<float> kinematics = _mc[i]->getMotorParams()[j].kinematics;
-            	if(kinematics.size()==3)
-            	{
-		         	double kx = kinematics[0];
-		         	double kw = kinematics[2];
-		         	if(kx>1e-3)
-		         	{
-		            	float vMax = fabs(cp[i].rpmMax / 60.f * M_PI / kx);
-		            	if(vMax > _vMax) _vMax = vMax;
-		            	float omegaMax = fabs(cp[i].rpmMax / 60.f * M_PI / kw);
-		            	if(omegaMax > _omegaMax) _omegaMax = omegaMax;
-		            }
+	         	double kx = kinematics[0];
+	         	double kw = kinematics[2];
+	         	if(fabs(kx)>1e-3)
+	         	{
+	            	float vMax = fabs(cp[i].rpmMax / 60.f * M_PI / kx);
+	            	if(vMax > _vMax) _vMax = vMax;
+	            }
+	            if(fabs(kw)>1e-3)
+	            {
+	            	float omegaMax = fabs(cp[i].rpmMax / 60.f * M_PI / kw);
+	            	if(omegaMax > _omegaMax) _omegaMax = omegaMax;
 		         }
             }
         }
 
         ROS_INFO_STREAM("Instanciated robot with vMax: " << _vMax << " m/s and omegaMax: " << _omegaMax << " rad/s");
-
-        _carrier = new CarrierBoard(&can, verbosity);
     }
 
     EduDrive::~EduDrive()
@@ -83,6 +99,14 @@ namespace edu
     {
         ROS_INFO("Enabling robot");
 
+        float voltageDrive = _carrier->getVoltageDrive();
+        
+        if(voltageDrive < 3.0)
+        {
+            ROS_WARN_STREAM("Unable to enable motor controllers. Low voltage on motor power supply rail");
+            return;
+        }
+
         // This is added for the RPi version using GPIO16 to enable all motor controllers
         int fd = open("/sys/class/gpio/gpio16/value", O_WRONLY);
         if (fd == -1)
@@ -94,7 +118,11 @@ namespace edu
         close(fd);
 
         for (std::vector<MotorController *>::iterator it = std::begin(_mc); it != std::end(_mc); ++it)
+        {
+            if(!(*it)->isInitialized())
+                (*it)->reinit();
             (*it)->enable();
+        }
     }
 
     void EduDrive::disable()
@@ -165,17 +193,6 @@ namespace edu
         {
             std::vector<float> kinematics0 = _mc[i]->getMotorParams()[0].kinematics;
             std::vector<float> kinematics1 = _mc[i]->getMotorParams()[1].kinematics;
-            if(kinematics0.size()!=3 || kinematics1.size()!=3)
-            {
-                std::cout << "#EduDrive Kinematic vectors does not fit to drive concept. The vector sizes of motorcontroler " << i
-                          << " are: " << kinematics0.size() << " and " << kinematics1.size() << ". Vectors of lenght==3 are expected." << std::endl;
-                return;
-            }
-        }
-        for (unsigned int i = 0; i < _mc.size(); ++i)
-        {
-            std::vector<float> kinematics0 = _mc[i]->getMotorParams()[0].kinematics;
-            std::vector<float> kinematics1 = _mc[i]->getMotorParams()[1].kinematics;
             float w[2];
             w[0] = kinematics0[0] * vFwd + kinematics0[1] * vLeft + kinematics0[2] * omega;
             w[1] = kinematics1[0] * vFwd + kinematics1[1] * vLeft + kinematics1[2] * omega;
@@ -191,23 +208,47 @@ namespace edu
 
     void EduDrive::receiveCAN()
     {
+        float voltageDrive = _carrier->getVoltageDrive();
+        
         std_msgs::Float32MultiArray msgRPM;
         std_msgs::ByteMultiArray msgEnabled;
+
+        bool controllersInitialized = true;
+        for (std::vector<MotorController *>::iterator it = std::begin(_mc); it != std::end(_mc); ++it)
+        {        
+	        controllersInitialized = controllersInitialized && (*it)->isInitialized();
+	     }
+        
         for (std::vector<MotorController *>::iterator it = std::begin(_mc); it != std::end(_mc); ++it)
         {
-            if ((*it)->checkConnectionStatus(200))
+            float response[2] = {0, 0};
+            bool enableState = false;
+            if(controllersInitialized)
             {
-                float response[2];
-                (*it)->getWheelResponse(response);
-                msgRPM.data.push_back(response[0]);
-                msgRPM.data.push_back(response[1]);
-                msgEnabled.data.push_back((*it)->getEnableState());
+                if(voltageDrive > 3.0)
+                {                    
+                    if((*it)->checkConnectionStatus(200))
+                    {
+                        (*it)->getWheelResponse(response);
+                        enableState = (*it)->getEnableState();
+                    }
+                    else
+                    {
+                        std::cout << "#EduDrive Error synchronizing with device" << (*it)->getCanId() << std::endl;    
+                    }
+                }
+                else
+                {
+                    std::cout << "#EduDrive Low voltage on drive power supply rail for device " << (*it)->getCanId() << std::endl;
+                    (*it)->deinit();
+                    disable();
+                }
             }
-            else
-            {
-                std::cout << "#EduDrive Error synchronizing with device" << (*it)->getCanId() << std::endl;
-            };
+            msgRPM.data.push_back(response[0]);
+            msgRPM.data.push_back(response[1]);
+            msgEnabled.data.push_back(enableState);
         }
+
         _pubRPM.publish(msgRPM);
         _pubEnabled.publish(msgEnabled);
 
@@ -220,7 +261,7 @@ namespace edu
         _pubVoltageMCU.publish(msgVoltageMCU);
 
         std_msgs::Float32 msgVoltageDrive;
-        msgVoltageDrive.data = _carrier->getVoltageDrive();
+        msgVoltageDrive.data = voltageDrive;
         _pubVoltageDrive.publish(msgVoltageDrive);
 
         double q[4];

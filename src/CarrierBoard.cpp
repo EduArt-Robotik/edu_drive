@@ -1,12 +1,14 @@
 #include "CarrierBoard.h"
 #include <iostream>
 #include "can/canprotocol.h"
+#include <unistd.h>
 
 namespace edu
 {
 
 CarrierBoard::CarrierBoard(SocketCAN* can, bool verbosity)
 {
+  _init = false;
   _verbosity = verbosity;
   
   _q[0] = 1.0;
@@ -27,6 +29,12 @@ CarrierBoard::CarrierBoard(SocketCAN* can, bool verbosity)
 
   setCANId(canidOutput);
   can->registerObserver(this);
+  
+  for(unsigned int i=0; i<500; i++)
+  {
+    if(_init) break;
+    usleep(10000);
+  }
 }
 
 CarrierBoard::~CarrierBoard()
@@ -77,6 +85,11 @@ void CarrierBoard::notify(struct can_frame* frame)
     _temperature    = ((float)data[0]) / 100.f;
     _voltageMCU     = ((float)udata[1]) / 100.f;
     _voltageDrive   = ((float)udata[2]) / 100.f;
+    
+    if(_verbosity)
+      std::cout << "T=" << _temperature << " Vmcu=" << _voltageMCU << " Vdrive=" << _voltageDrive << std::endl;
+      
+    _init = true;
   }
 }
 

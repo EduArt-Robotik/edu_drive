@@ -75,6 +75,8 @@ private:
     float            _voltageDrive;     // Voltage supply for powering Drives
     
     bool             _verbosity;        // Set this flag to true via the Constructor to get information via cout
+    
+    bool             _init;
 };
 
 } // namespace
