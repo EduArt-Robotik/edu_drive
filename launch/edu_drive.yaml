@@ -20,7 +20,7 @@ eduDrive:
     rpmMax: 140.0
     drive0:
       channel: 0
-      kinematics: [10.0, 0.0, -5.0]
+      kinematics: [20.0, 0.0, -10.0]
     drive1:
       channel: 1
       kinematics: [0.0, 0.0, 0.0]
@@ -33,7 +33,7 @@ eduDrive:
     invertEnc: 0
     drive0:
       channel: 0
-      kinematics: [10.0, 0.0, -5.0]
+      kinematics: [-20.0, 0.0, -10.0]
     drive1:
       channel: 1
       kinematics: [0.0, 0.0, 0.0]

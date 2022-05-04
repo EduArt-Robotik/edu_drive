@@ -27,10 +27,31 @@ namespace edu
         _pubIMU = _nh.advertise<sensor_msgs::Imu>("imu", 1);
         _pubOrientation = _nh.advertise<geometry_msgs::PoseStamped>("pose", 1);
 
+        _vMax = 0.f;
+
         for (unsigned int i = 0; i < cp.size(); ++i)
         {
             _mc.push_back(new MotorController(&can, cp[i], verbosity));
+            
+            for(unsigned int j=0; j<_mc[i]->getMotorParams().size(); j++)
+            {
+            	std::vector<float> kinematics = _mc[i]->getMotorParams()[j].kinematics;
+            	if(kinematics.size()==3)
+            	{
+		         	double kx = kinematics[0];
+		         	double kw = kinematics[2];
+		         	if(kx>1e-3)
+		         	{
+		            	float vMax = fabs(cp[i].rpmMax / 60.f * M_PI / kx);
+		            	if(vMax > _vMax) _vMax = vMax;
+		            	float omegaMax = fabs(cp[i].rpmMax / 60.f * M_PI / kw);
+		            	if(omegaMax > _omegaMax) _omegaMax = omegaMax;
+		            }
+		         }
+            }
         }
+
+        ROS_INFO_STREAM("Instanciated robot with vMax: " << _vMax << " m/s and omegaMax: " << _omegaMax << " rad/s");
 
         _carrier = new CarrierBoard(&can, verbosity);
     }
@@ -124,12 +145,9 @@ namespace edu
         btn9Prev = joy->buttons[9];
         btn10Prev = joy->buttons[10];
 
-        // ToDo: Define a proper calculation routine for vMax and omegaMax
-        float vMax = 1.f;
-        float omegaMax = 1.f;
-        float vFwd = throttle * fwd * vMax;
-        float vLeft = throttle * left * vMax;
-        float omega = throttle * turn * omegaMax;
+        float vFwd = throttle * fwd * _vMax;
+        float vLeft = throttle * left * _vMax;
+        float omega = throttle * turn * _omegaMax;
 
         controlMotors(vFwd, vLeft, omega);
 
@@ -177,7 +195,7 @@ namespace edu
         std_msgs::ByteMultiArray msgEnabled;
         for (std::vector<MotorController *>::iterator it = std::begin(_mc); it != std::end(_mc); ++it)
         {
-            if ((*it)->checkConnectionStatus(100))
+            if ((*it)->checkConnectionStatus(200))
             {
                 float response[2];
                 (*it)->getWheelResponse(response);

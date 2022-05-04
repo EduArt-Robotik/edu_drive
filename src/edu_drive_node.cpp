@@ -73,9 +73,9 @@ int main(int argc, char *argv[])
       // --- Motor parameters ---------
       for(int d=0; d<2; d++)
       {
-         std::string driveID = controllerID + std::string("drive") + std::to_string(d);
+         std::string driveID = controllerID + std::string("/drive") + std::to_string(d);
          nh.param(driveID + "/channel", cp.motorParams[d].channel);
-         nh.param(driveID + "/kinematics", cp.motorParams[d].kinematics);
+         nh.getParam(driveID + "/kinematics", cp.motorParams[d].kinematics);
       }
       // ------------------------------
 
@@ -83,12 +83,11 @@ int main(int argc, char *argv[])
    }
    // -------------------------
 
-
    edu::SocketCAN can(canInterface);
    can.startListener();
    std::cout << "CAN Interface: " << canInterface << std::endl;
 
-   bool verbosity = true;
+   bool verbosity = false;
    edu::EduDrive drive(controllerParams, can, verbosity);
    drive.run();
 }

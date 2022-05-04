@@ -84,6 +84,9 @@ private:
 
     CarrierBoard* _carrier;
 
+    double _vMax;
+    double _omegaMax;
+
     bool _verbosity;
 };
 
