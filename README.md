@@ -1,8 +1,9 @@
 # edu_drive
-![EduDrive](/images/edu_drive.png)
-
-
 This package comprises a ROS interface for EduArt's generic drive concept. It covers several kinematic concepts: Differential drive, Mecanum steering and Skid steering. All three can be used in dependency of the mounted wheels and the configuration of YAML parameters.
+
+<p align="center">
+![EduDrive](/images/edu_drive.png)
+</p>
 
 ## Launching the Robot
 In order to run the robot, you need to launch the appropriate launch file. In the launch folder, there is a prepared template.
