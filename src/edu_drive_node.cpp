@@ -2,81 +2,93 @@
 
 #include "EduDrive.h"
 #include "ros/ros.h"
+#include <vector>
 
 int main(int argc, char *argv[])
 {
-    ros::init(argc, argv, "edu_drive_node");
+   ros::init(argc, argv, "edu_drive_node");
 
-    std::vector<edu::DriveKinematics> kinematics;
+   ros::NodeHandle nh("~eduDrive");
 
-    std::string canInterface;
-    int maxPulseWidth;
-    int frequencyScale;
-    int timeout;
-    int responseMode;
+   std::vector<edu::ControllerParams> controllerParams;
 
-    // Assign motor channels to motor/wheel mounting
-    ros::NodeHandle nh("~");
-    
-    nh.param("canInterface",    canInterface,                       std::string("can0"));
-    nh.param("frequencyScale",  frequencyScale,                     32);
-    
-    edu::MotorParams motorParams;
-    nh.param("inputWeight",     motorParams.inputWeight,            0.8f);
-    nh.param("maxPulseWidth",   maxPulseWidth,                      63);
-    nh.param("timeout",         timeout,                            300);
-    nh.param("gearRatio",       motorParams.gearRatio,              70.f);
-    nh.param("encoderRatio",    motorParams.encoderRatio,           64.f);
-    nh.param("rpmMax",          motorParams.rpmMax,                 140.f);
-    nh.param("responseMode",    responseMode,                       0);
-    nh.param("kp",              motorParams.kp,                     0.5f);
-    nh.param("ki",              motorParams.ki,                     300.f);
-    nh.param("kd",              motorParams.kd,                     0.f);
-    nh.param("antiWindup",      motorParams.antiWindup,             1);
-    nh.param("invertEnc",       motorParams.invertEnc,              1);
+   // --- System parameters --------
+   std::string canInterface;
+   int frequencyScale;
+   float inputWeight;
+   int maxPulseWidth;
+   int timeout;
 
-    // Ensure a proper range for the timeout value
-    // A lag more than a second should not be tolerated
-	 if(timeout<0 && timeout>1000)
-	    timeout = 300;
-	 motorParams.timeout        = timeout;
-	 motorParams.frequencyScale = frequencyScale;
-	 motorParams.maxPulseWidth  = maxPulseWidth;
+   nh.param("canInterface", canInterface, std::string("can0"));
+   nh.param("frequencyScale", frequencyScale, 32);
+   nh.param("inputWeight", inputWeight, 0.8f);
+   nh.param("maxPulseWidth", maxPulseWidth, 50);
+   nh.param("timeout", timeout, 300);
 
-    motorParams.responseMode = edu::CAN_RESPONSE_RPM;
-    if(responseMode != edu::CAN_RESPONSE_RPM)
-       motorParams.responseMode = edu::CAN_RESPONSE_POS;
-       
-    // Check, if motor assignment is plausible
-    int drives = 0;
-    nh.param("drives", drives, 0);
-    for(unsigned int i=0; i<drives; ++i)
-    {
-    	std::string driveID = std::string("drive") + std::to_string(i);
-    	std::vector<float> driveParams;
-    	nh.getParam(driveID, driveParams);
-    	if(driveParams.size()!=5)
-    	{
-    	  std::cout << "Warning: Launch file parameters are not plausible for " << driveID << std::endl;
-    	  exit(1);
-    	}
-    	
-    	edu::DriveKinematics k;
-    	k.canID   = driveParams[0];
-      k.channel = driveParams[1];
-      k.kX      = driveParams[2];
-      k.kY      = driveParams[3];
-      k.kOmega  = driveParams[4];
-      k.mp      = motorParams;
-      if(i==1) k.mp.invertEnc = 0;
-      kinematics.push_back(k);
-    }
-    
-    edu::SocketCAN can(canInterface);
-    can.startListener();
-    std::cout << "CAN Interface: " << canInterface << std::endl;
+   // Ensure a proper range for the timeout value
+   // A lag more than a second should not be tolerated
+   if (timeout < 0 && timeout > 1000)
+      timeout = 300;
 
-    bool verbosity = true;
-    edu::EduDrive drive(kinematics, can, verbosity);
-    drive.run();
+   float kp;
+   float ki;
+   float kd;
+   int antiWindup;
+   int invertEnc;
+   int responseMode;
+   nh.param("kp", kp, 0.0f);
+   nh.param("ki", ki, 0.f);
+   nh.param("kd", kd, 0.f);
+   nh.param("antiWindup", antiWindup, 1);
+   nh.param("invertEnc", invertEnc, 0);
+   nh.param("responseMode", responseMode, 0);
+   // -----------------------------
+
+   // --- Controller parameters ---
+   int controllers = 0;
+   nh.param("controllers", controllers, 0);
+
+   for(int c=0; c<controllers; c++)
+   {
+      edu::ControllerParams cp;
+
+      cp.frequencyScale = frequencyScale;
+      cp.inputWeight    = inputWeight;
+      cp.maxPulseWidth  = maxPulseWidth;
+      cp.timeout        = timeout;
+      cp.kp             = kp;
+      cp.ki             = ki;
+      cp.kd             = kd;
+      cp.antiWindup     = antiWindup;
+      
+      std::string controllerID = std::string("controller") + std::to_string(c);
+      nh.param(controllerID + "/canID", cp.canID, 0);
+      nh.param(controllerID + "/gearRatio", cp.gearRatio, 0.f);
+      nh.param(controllerID + "/encoderRatio", cp.encoderRatio, 0.f);
+      nh.param(controllerID + "/rpmMax", cp.rpmMax, 0.f);
+      nh.param(controllerID + "/invertEnc", cp.invertEnc, invertEnc);
+
+      cp.responseMode   = (responseMode==0 ? edu::CAN_RESPONSE_RPM : edu::CAN_RESPONSE_POS);
+
+      // --- Motor parameters ---------
+      for(int d=0; d<2; d++)
+      {
+         std::string driveID = controllerID + std::string("drive") + std::to_string(d);
+         nh.param(driveID + "/channel", cp.motorParams[d].channel);
+         nh.param(driveID + "/kinematics", cp.motorParams[d].kinematics);
+      }
+      // ------------------------------
+
+      controllerParams.push_back(cp);
+   }
+   // -------------------------
+
+
+   edu::SocketCAN can(canInterface);
+   can.startListener();
+   std::cout << "CAN Interface: " << canInterface << std::endl;
+
+   bool verbosity = true;
+   edu::EduDrive drive(controllerParams, can, verbosity);
+   drive.run();
 }

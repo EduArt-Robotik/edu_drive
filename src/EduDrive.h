@@ -10,17 +10,6 @@
 namespace edu
 {
 
-struct DriveKinematics
-{
-   unsigned int canID = 0;
-   unsigned int channel = 0;
-	float kX     = 0.f;
-	float kY     = 0.f;
-	float kOmega = 0.f;
-	MotorParams mp;
-};
-
-
 /**
  * @class EduDrive
  * @brief Drive interface to EduArt's stackable motor controllers
@@ -34,7 +23,7 @@ public:
      * @brief Constructor
      *
      */
-    EduDrive(std::vector<DriveKinematics> kinematic, SocketCAN& can, bool verbosity=false);
+    EduDrive(std::vector<ControllerParams> cp, SocketCAN& can, bool verbosity=false);
 
     /**
      * @brief Destroy the Edu Drive object
@@ -91,11 +80,11 @@ private:
 
     ros::Time           _lastCmd;       // Time elapsed since last call
 
-    std::vector<DriveKinematics> _kinematics;
-
     std::vector<MotorController*>  _mc;
 
     CarrierBoard* _carrier;
+
+    bool _verbosity;
 };
 
 } // namespace

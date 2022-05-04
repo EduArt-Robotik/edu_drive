@@ -1,34 +1,5 @@
 <launch>
   <node pkg="edu_drive" type="edu_drive_node" name="edu_drive_node" output="screen">
-    <!-- Mapping of motor controller channels to kinematic model -->
-    <param name="drives" value="2"/>
-    <!-- Drive kinematics are described as follows: -->
-    <!-- Kinematic vector: [kx, ky, komega] -->
-    <!-- omega_wheel = kx*vx + ky*vy + komega*omega -->
-    <!-- Calculation of kinematic values are for instance: -->
-    <!-- kx = 1/r, ky=1/r, komega=1/r*(length+width)/2 -->
-    <rosparam param="drive0">[0, 0,  10.0, 0.0, -5.0]</rosparam>
-    <rosparam param="drive1">[1, 0, -10.0, 0.0, -5.0]</rosparam>
-
-    <!-- Gearmotor/Encoder parameters -->
-    <!-- 70:1 Metal Gearmotor 37Dx57L mm with 64 CPR Encoder -->
-    <param name="gearRatio"     value="70.0"/>
-    <param name="encoderRatio"  value="64.0"/>
-    <param name="rpmMax"        value="140.0"/>
-
-    <!-- Parameter of hardware interface -->
-    <param name="frequencyScale"     value="32"/>
-    <param name="maxPulseWidth"      value="100"/>
-    <param name="inputWeight"        value="0.2"/>
-    
-    <!-- Socket CAN interface -->
-    <param name="canInterface"       value="can0"/>
-           
-    <!-- PID controller parameters -->
-    <param name="kp"            value="0.4"/>
-    <param name="ki"            value="4.0"/>
-    <param name="kd"            value="0.0"/>
-    <param name="antiWindup"    value="1"/>
-    <param name="invertEnc"     value="1"/>
+    <rosparam command="load" file="$(find edu_drive)/launch/edu_drive.yaml" />
   </node>
 </launch>

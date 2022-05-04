@@ -5,38 +5,54 @@
 #include <iomanip>
 #include <unistd.h>
 #include "can/canprotocol.h"
+#include <sys/time.h>
 
 namespace edu
 {
 
-MotorController::MotorController(SocketCAN* can, unsigned int canID, MotorParams params, bool verbosity)
+MotorController::MotorController(SocketCAN* can, ControllerParams params, bool verbosity)
 {
   _verbosity = verbosity;
-  
+  _params    = params;
+
   if(_verbosity)
   {
-    std::cout << std::endl << "--- Motor #" << canID << " parameters ---" << std::endl;
+    std::cout << "---------------------------" << std::endl << std::endl;
     std::cout << "frequencyScale = " << params.frequencyScale << std::endl;
     std::cout << "inputWeight    = " << params.inputWeight << std::endl;
     std::cout << "maxPulseWidth  = " << (int)params.maxPulseWidth << std::endl;
     std::cout << "timeout        = " << params.timeout << std::endl;
-    std::cout << "gearRatio      = " << params.gearRatio << std::endl;
-    std::cout << "encoderRatio   = " << params.encoderRatio << std::endl;
-    std::cout << "rpmMax         = " << params.rpmMax << std::endl;
-    std::cout << "responseMode   = " << params.responseMode << std::endl;
+
     std::cout << "kp             = " << params.kp << std::endl;
     std::cout << "ki             = " << params.ki << std::endl;
     std::cout << "kd             = " << params.kd << std::endl;
     std::cout << "antiWindup     = " << params.antiWindup << std::endl;
     std::cout << "invertEnc      = " << params.invertEnc << std::endl;
+    std::cout << "responseMode   = " << params.responseMode << std::endl;
+
+    std::cout << std::endl << "--- Controller #" << params.canID << " parameters ---" << std::endl;
+    std::cout << "    gearRatio      = " << params.gearRatio << std::endl;
+    std::cout << "    encoderRatio   = " << params.encoderRatio << std::endl;
+    std::cout << "    rpmMax         = " << params.rpmMax << std::endl;
+
+    for(int i=0; i<2; i++)
+    {
+      std::cout << "   --- Drive" << i << std::endl;
+      std::cout << "       channel: " << params.motorParams[0].channel << std::endl;
+      std::cout << "       kinematics: ";
+      for(int j=0; j<params.motorParams[i].kinematics.size(); j++)
+        std::cout <<           params.motorParams[i].kinematics[j] << " ";
+      std::cout << std::endl;
+    }
+
     std::cout << "---------------------------" << std::endl << std::endl;
   }
 
-  _params    = params;
   _can       = can;
-  makeCanStdID(SYSID_MC2, canID, &_inputAddress, &_outputAddress, &_broadcastAddress);
+  makeCanStdID(SYSID_MC2, params.canID, &_inputAddress, &_outputAddress, &_broadcastAddress);
   _cf.can_id = _inputAddress;
-  std::cout << "# CAN Input ID: " << _inputAddress << " CAN Output ID: " << _outputAddress << std::endl;
+  if(verbosity)
+    std::cout << "#MotorController CAN Input ID: " << _inputAddress << " CAN Output ID: " << _outputAddress << std::endl;
 
   canid_t canidOutput = _outputAddress;
 
@@ -49,102 +65,105 @@ MotorController::MotorController(SocketCAN* can, unsigned int canID, MotorParams
   _enabled       = false;
   _cntReceived   = 0;
 
+  _seconds       = 0;
+  _usec          = 0;
+
   bool retval = true;
   
   if(!setFrequencyScale(params.frequencyScale))
   {
-    std::cout << "# Setting frequency scaling parameter failed for device " << canID << std::endl;
+    std::cout << "#MotorController Setting frequency scaling parameter failed for device " << params.canID << std::endl;
     retval = false;
   }
   usleep(1000);
   
   if(!enable())
   {
-    std::cout << "# Enabling motor controller failed for device " << canID << std::endl;
+    std::cout << "#MotorController Enabling motor controller failed for device " << params.canID << std::endl;
     retval = false;
   }
   usleep(1000);
   
   if(!setInputWeight(params.inputWeight))
   {
-    std::cout << "# Setting differential factor of PID controller failed for device " << canID << std::endl;
+    std::cout << "#MotorController Setting differential factor of PID controller failed for device " << params.canID << std::endl;
     retval = false;
   }
   usleep(1000);
   
   if(!setMaxPulseWidth(params.maxPulseWidth))
   {
-    std::cout << "# Setting maximum pulse width failed for device " << canID << std::endl;
+    std::cout << "#MotorController Setting maximum pulse width failed for device " << params.canID << std::endl;
     retval = false;
   }
   usleep(1000);
 
   if(!setTimeout(params.timeout))
   {
-    std::cout << "# Setting timeout failed for device " << canID << std::endl;
+    std::cout << "#MotorController Setting timeout failed for device " << params.canID << std::endl;
     retval = false;
   }
   usleep(1000);
   
   if(!setGearRatio(params.gearRatio))
   {
-    std::cout << "# Setting gear ratio failed for device " << canID << std::endl;
+    std::cout << "#MotorController Setting gear ratio failed for device " << params.canID << std::endl;
     retval = false;
   }
   usleep(1000);
   
   if(!setEncoderTicksPerRev(params.encoderRatio))
   {
-    std::cout << "# Setting encoder parameters failed for device " << canID << std::endl;
+    std::cout << "#MotorController Setting encoder parameters failed for device " << params.canID << std::endl;
     retval = false;
   }
   usleep(1000);
   
   if(!setKp(params.kp))
   {
-    std::cout << "# Setting proportional factor of PID controller failed for device " << canID << std::endl;
+    std::cout << "#MotorController Setting proportional factor of PID controller failed for device " << params.canID << std::endl;
     retval = false;
   }
   usleep(1000);
   
   if(!setKi(params.ki))
   {
-    std::cout << "# Setting integration factor of PID controller failed for device " << canID << std::endl;
+    std::cout << "#MotorController Setting integration factor of PID controller failed for device " << params.canID << std::endl;
     retval = false;
   }
   usleep(1000);
   
   if(!setKd(params.kd))
   {
-    std::cout << "# Setting differential factor of PID controller failed for device " << canID << std::endl;
+    std::cout << "#MotorController Setting differential factor of PID controller failed for device " << params.canID << std::endl;
     retval = false;
   }
   usleep(1000);
   
   if(!setAntiWindup(params.antiWindup))
   {
-    std::cout << "# Setting differential factor of PID controller failed for device " << canID << std::endl;
+    std::cout << "#MotorController Setting differential factor of PID controller failed for device " << params.canID << std::endl;
     retval = false;
   }
   usleep(1000);
   
   if(!configureResponse(params.responseMode))
   {
-    std::cout << "# Setting response mode failed for device " << canID << std::endl;
+    std::cout << "#MotorController Setting response mode failed for device " << params.canID << std::endl;
     retval = false;
   }
   usleep(1000);
   
   if(!invertEncoderPolarity(params.invertEnc))
   {
-    std::cout << "# Setting encoder polarity failed for device " << canID << std::endl;
+    std::cout << "#MotorController Setting encoder polarity failed for device " << params.canID << std::endl;
     retval = false;
   }
   usleep(25000);
 
   if(!retval)
   {
-    std::cout << "# ERROR initializing motor controller with ID " << canID << std::endl;
+    std::cout << "#MotorController ERROR initializing motor controller with ID " << params.canID << std::endl;
     std::cout << "-----------------------------------------------";
   }
 }
@@ -182,6 +201,11 @@ bool MotorController::broadcastExternalSync()
   bool retval = _can->send(&_cf);
   _cf.can_id = idTmp;
   return retval;
+}
+
+std::vector<MotorParams> MotorController::getMotorParams()
+{
+  return _params.motorParams;
 }
 
 bool MotorController::configureResponse(enum CanResponse mode)
@@ -292,11 +316,15 @@ bool MotorController::setPWM(int pwm[2])
 {
   _cf.can_dlc = 3;
 
-  int vel1 = (((int)pwm[0]) * 127) / 100;
-  int vel2 = (((int)pwm[1]) * 127) / 100;
+  int vel1 = pwm[0];
+  int vel2 = pwm[1];
+  if(vel1>100)  vel1 = 100;
+  if(vel1<-100) vel1 = -100;
+  if(vel2>100)  vel2 = 100;
+  if(vel2<-100) vel2 = -100;
   _cf.data[0] = CMD_MOTOR_SETPWM;
-  _cf.data[1] = (char)(vel1 + 0x7F);
-  _cf.data[2] = (char)(vel2 + 0x7F);
+  _cf.data[1] = (char)vel1;
+  _cf.data[2] = (char)vel2;
 
   return _can->send(&_cf);
 }
@@ -403,6 +431,12 @@ void MotorController::notify(struct can_frame* frame)
 {
   if(frame->can_dlc==6)
   {
+    // Take time stamp
+    timeval clock;
+    ::gettimeofday(&clock, 0);
+    _seconds = clock.tv_sec;
+    _usec = clock.tv_usec;
+
     if(frame->data[0] == RESPONSE_MOTOR_RPM)
     {
     
@@ -421,21 +455,24 @@ void MotorController::notify(struct can_frame* frame)
       _pos[1] = (frame->data[3] | (frame->data[4] << 8));
     }
     _enabled = (frame->data[5] != 0);
-    _cntReceived++;
     if(_verbosity)
-	    std::cout << "CAN #" << _cf.can_id << ": Received (" << _cntReceived << ")" << std::endl;
+	    std::cout << "MotorController CANID " << _cf.can_id << ": Received (" << _cntReceived << ")" << std::endl;
   }
 }
 
-bool MotorController::waitForSync(unsigned int timeoutInMillis)
+bool MotorController::checkConnectionStatus(unsigned int timeoutInMillis)
 {
-  unsigned int cnt=0;
-  unsigned int cntAtStart = _cntReceived;
-  while((cntAtStart == _cntReceived) && ((cnt++)<timeoutInMillis || timeoutInMillis==0))
-  {
-    usleep(1000);
-  }
-  return (_cntReceived>cntAtStart);
+      // Take time stamp
+    timeval clock;
+    ::gettimeofday(&clock, 0);
+    uint32_t seconds = clock.tv_sec;
+    uint32_t usec = clock.tv_usec;
+
+    uint32_t deltaSec  = seconds - _seconds;
+    uint32_t deltaUSec = usec - _usec;
+
+    uint32_t elapsed = deltaSec * 1000 + deltaUSec / 1000;
+    return elapsed < timeoutInMillis;
 }
 
 void MotorController::stop()

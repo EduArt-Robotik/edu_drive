@@ -60,21 +60,21 @@ private:
 
     can_frame        _cf;
 
-    int32_t          _inputAddress;
+    int32_t          _inputAddress;     // Input address (CAN ID) of carrier board
 
-    int32_t          _outputAddress;
+    int32_t          _outputAddress;    // Output address (CAN ID) of carrier board
 
-    int32_t          _broadcastAddress;
+    int32_t          _broadcastAddress; // Broadcast address for the distribution of CAN data to multiple nodes
 
-    double           _q[4];         // Orientation data as quaternion (layout [w x y z])
+    double           _q[4];             // Orientation data as quaternion (layout [w x y z])
 
-    float            _temperature;  // Temperature of surface of carrier board
+    float            _temperature;      // Temperature of surface of carrier board
 
-    float            _voltageMCU;   // Voltage supply for powering MCU
+    float            _voltageMCU;       // Voltage supply for powering MCU
 
-    float            _voltageDrive; // Voltage supply for powering Drives
+    float            _voltageDrive;     // Voltage supply for powering Drives
     
-    bool             _verbosity;
+    bool             _verbosity;        // Set this flag to true via the Constructor to get information via cout
 };
 
 } // namespace
