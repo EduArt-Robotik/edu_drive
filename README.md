@@ -24,7 +24,7 @@ export ROS_MASTER_URI=http://${MYIP}:11311
 export ROS_IP=${MYIP}
 ``` 
 
-# YAML file parameters
+## YAML file parameters
 
 | tag    | description      |
 | ------ |:--|
@@ -44,3 +44,28 @@ export ROS_IP=${MYIP}
 | rpmMax         | Maximum revolutions per minute of geared motor pinion |
 | channel        | Used channel of motor controller. There are single-channel motorshields and dual-channel motorshields. Meaningful values are 0 or 1. |
 | kinematics     | Three-dimensional vector describing the conversion from Twist messages in motor revolutions. See explanation below. |
+
+## Calculation of the kinematic parameters
+The kinematic concept uses a conversion matrix for the conversion of twist parameters and wheel speeds.
+$$
+\left(\begin{array}{cc} 
+\omega_0\\ 
+\omega_1\\
+\omega_2\\
+\omega_3
+\end{array}\right) = \mathbf{T} \cdot 
+\left(\begin{array}{cc} 
+v_x\\ 
+v_y\\
+\omega
+\end{array}\right)
+$$
+, where $\omega_i$ are the wheel's angular velocities and $v_x$, $v_y$ and $\omega$ are Twist values. The matrix $\mathbf{T}$ can be calculated as follows:
+$$
+\mathbf{T} = \left(\begin{array}{ccc} 
+kx_0 & ky_0 & komega_0\\ 
+kx_1 & ky_1 & komega_1\\ 
+kx_2 & ky_2 & komega_2\\ 
+kx_3 & ky_3 & komega_3\\ 
+\end{array}\right)
+$$ for a four-wheeled robot.
