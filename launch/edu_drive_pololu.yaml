@@ -1,0 +1,40 @@
+eduDrive:
+  canInterface: can0
+  frequencyScale: 32
+  inputWeight: 0.2
+  maxPulseWidth: 100
+  timeout: 500
+  kp: 0.5
+  ki: 0.0
+  kd: 0.0
+  antiWindup: 1
+  invertEnc: 0
+  responseMode: 0
+  
+  controllers: 2
+  
+  controller0:
+    canID: 0
+    gearRatio: 100.0
+    encoderRatio: 64.0
+    rpmMax: 100.0
+    drive0:
+      channel: 0
+      kinematics: [16.0, 0.0, 3.48]
+    drive1:
+      channel: 1
+      kinematics: [0.0, 0.0, 0.0]
+ 
+  controller1:
+    canID: 1
+    gearRatio: 100.0
+    encoderRatio: 64.0
+    rpmMax: 100.0
+    invertEnc: 0
+    drive0:
+      channel: 0
+      kinematics: [-16.0, 0.0, 3.48]
+    drive1:
+      channel: 1
+      kinematics: [0.0, 0.0, 0.0]
+
