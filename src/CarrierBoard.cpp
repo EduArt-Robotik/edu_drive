@@ -18,7 +18,9 @@ CarrierBoard::CarrierBoard(SocketCAN* can, bool verbosity)
 
   _temperature  = -273.f;
   _voltageMCU   = 0.f;
+  _currentMCU   = 0.f;
   _voltageDrive = 0.f;
+  _currentDrive = 0.f;
 
   makeCanStdID(SYSID_RPI_ADAPTER, RPI_ADAPTER, &_inputAddress, &_outputAddress, &_broadcastAddress);
   _cf.can_id = _inputAddress;
@@ -60,9 +62,19 @@ float CarrierBoard::getVoltageMCU()
   return _voltageMCU;
 }
 
+float CarrierBoard::getCurrentMCU()
+{
+  return _currentMCU;
+}
+
 float CarrierBoard::getVoltageDrive()
 {
   return _voltageDrive;
+}
+
+float CarrierBoard::getCurrentDrive()
+{
+  return _currentDrive;
 }
 
 void CarrierBoard::notify(struct can_frame* frame)
@@ -78,16 +90,25 @@ void CarrierBoard::notify(struct can_frame* frame)
     if(_verbosity)
       std::cout << "w=" << _q[0] << " x=" << _q[1] << " y=" << _q[2] << " z=" << _q[3] << std::endl;
   }
-  else if(frame->can_dlc==6)
+  else if(frame->can_dlc==7)
   {
     int16_t*   data = (int16_t*)frame->data;
-    uint16_t* udata = (uint16_t*)frame->data;
     _temperature    = ((float)data[0]) / 100.f;
-    _voltageMCU     = ((float)udata[1]) / 100.f;
-    _voltageDrive   = ((float)udata[2]) / 100.f;
+    uint16_t* udata = (uint16_t*)(&(frame->data[3]));
+    if(frame->data[2] == 0)
+    {
+        _voltageMCU     = ((float)udata[0]) / 100.f;
+        _voltageDrive   = ((float)udata[1]) / 100.f;
+    }
+    else
+    {
+        _currentMCU     = ((float)udata[0]) / 100.f;
+        _currentDrive   = ((float)udata[1]) / 100.f;
+    }
+
     
     if(_verbosity)
-      std::cout << "T=" << _temperature << " Vmcu=" << _voltageMCU << " Vdrive=" << _voltageDrive << std::endl;
+      std::cout << "T=" << _temperature << "°C Vmcu=" << _voltageMCU << "V Vdrive=" << _voltageDrive << "V Imcu=" << _currentMCU << "A Idrive=" << _currentDrive << "A" << std::endl;
       
     _init = true;
   }

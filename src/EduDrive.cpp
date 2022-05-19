@@ -12,9 +12,11 @@ namespace edu
     EduDrive::EduDrive(std::vector<ControllerParams> cp, SocketCAN &can, bool verbosity)
     {
         _verbosity = verbosity;
+        _enabled = false;
 
         _subJoy = _nh.subscribe<sensor_msgs::Joy>("joy", 1, &EduDrive::joyCallback, this);
         _subVel = _nh.subscribe<geometry_msgs::Twist>("vel/teleop", 10, &EduDrive::velocityCallback, this);
+        _srvEnable = _nh.advertiseService("enable", &EduDrive::enableCallback, this);
 
         // Publisher of motor shields
         _pubEnabled = _nh.advertise<std_msgs::ByteMultiArray>("enabled", 1);
@@ -22,11 +24,14 @@ namespace edu
 
         // Publisher of carrier shield
         _pubTemp = _nh.advertise<std_msgs::Float32>("temperature", 1);
-        _pubVoltageMCU = _nh.advertise<std_msgs::Float32>("voltageMCU", 1);
+        _pubVoltageMCU   = _nh.advertise<std_msgs::Float32>("voltageMCU", 1);
+        _pubCurrentMCU   = _nh.advertise<std_msgs::Float32>("currentMCU", 1);
         _pubVoltageDrive = _nh.advertise<std_msgs::Float32>("voltageDrive", 1);
-        _pubIMU = _nh.advertise<sensor_msgs::Imu>("imu", 1);
-        _pubOrientation = _nh.advertise<geometry_msgs::PoseStamped>("pose", 1);
+        _pubCurrentDrive = _nh.advertise<std_msgs::Float32>("currentDrive", 1);
+        _pubIMU          = _nh.advertise<sensor_msgs::Imu>("imu", 1);
+        _pubOrientation  = _nh.advertise<geometry_msgs::PoseStamped>("pose", 1);
 
+		
         _carrier = new CarrierBoard(&can, verbosity);
         
         _vMax = 0.f;
@@ -178,8 +183,6 @@ namespace edu
         float omega = throttle * turn * _omegaMax;
 
         controlMotors(vFwd, vLeft, omega);
-
-        _lastCmd = ros::Time::now();
     }
 
     void EduDrive::velocityCallback(const geometry_msgs::Twist::ConstPtr &cmd)
@@ -187,8 +190,26 @@ namespace edu
         controlMotors(cmd->linear.x, cmd->linear.y, cmd->angular.z);
     }
 
+    bool EduDrive::enableCallback(std_srvs::SetBool::Request& request, std_srvs::SetBool::Response& response)
+    {
+       if(request.data==true)
+       {
+           ROS_INFO("Enabling robot");
+           enable();
+       }
+       else
+       {
+           ROS_INFO("Disabling robot");
+           disable();
+       }
+       response.success = true;
+       return true;
+    }
+
     void EduDrive::controlMotors(float vFwd, float vLeft, float omega)
     {
+        _lastCmd = ros::Time::now();
+            
         for (unsigned int i = 0; i < _mc.size(); ++i)
         {
             std::vector<float> kinematics0 = _mc[i]->getMotorParams()[0].kinematics;
@@ -248,6 +269,16 @@ namespace edu
             msgRPM.data.push_back(response[1]);
             msgEnabled.data.push_back(enableState);
         }
+        
+        _enabled = false;
+        if(msgEnabled.data.size()>0)
+        {
+            _enabled = msgEnabled.data[0];
+            for(int i=1; i<msgEnabled.data.size(); i++)
+            {
+                _enabled &= msgEnabled.data[i];
+            }
+        }
 
         _pubRPM.publish(msgRPM);
         _pubEnabled.publish(msgEnabled);
@@ -260,9 +291,17 @@ namespace edu
         msgVoltageMCU.data = _carrier->getVoltageMCU();
         _pubVoltageMCU.publish(msgVoltageMCU);
 
+        std_msgs::Float32 msgCurrentMCU;
+        msgCurrentMCU.data = _carrier->getCurrentMCU();
+        _pubCurrentMCU.publish(msgCurrentMCU);
+
         std_msgs::Float32 msgVoltageDrive;
         msgVoltageDrive.data = voltageDrive;
         _pubVoltageDrive.publish(msgVoltageDrive);
+
+        std_msgs::Float32 msgCurrentDrive;
+        msgCurrentDrive.data = _carrier->getCurrentDrive();
+        _pubCurrentDrive.publish(msgCurrentDrive);
 
         double q[4];
         _carrier->getOrientation(q);
@@ -285,7 +324,7 @@ namespace edu
     {
         ros::Duration dt = ros::Time::now() - _lastCmd;
         bool lag = (dt.toSec() > 0.5);
-        if (lag)
+        if(lag  && _enabled)
         {
             ROS_WARN_STREAM("Lag detected ... deactivate motor control");
             disable();
