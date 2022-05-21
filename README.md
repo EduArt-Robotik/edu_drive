@@ -64,3 +64,48 @@ for a four-wheeled robot. kx<sub>i</sub>, ky<sub>i</sub> and k&omega;<sub>i</sub
 
 ### Example for a Mecanum drive
 <img src="https://latex.codecogs.com/svg.image?\mathbf{T}&space;=&space;\frac{1}{r}\begin{pmatrix}&space;&space;1&space;&&space;-1&space;&&space;-\frac{l_x&plus;l_y}{2}\\&space;-1&space;&&space;-1&space;&&space;-\frac{l_x&plus;l_y}{2}\\&space;&space;1&space;&&space;&space;1&space;&&space;-\frac{l_x&plus;l_y}{2}\\&space;-1&space;&&space;&space;1&space;&&space;-\frac{l_x&plus;l_y}{2}\end{pmatrix}" title="https://latex.codecogs.com/svg.image?\mathbf{T} = \frac{1}{r}\begin{pmatrix} 1 & -1 & -\frac{l_x+l_y}{2}\\ -1 & -1 & -\frac{l_x+l_y}{2}\\ 1 & 1 & -\frac{l_x+l_y}{2}\\ -1 & 1 & -\frac{l_x+l_y}{2}\end{pmatrix}" />
+
+# Setting up a Raspberry PI4 SBC from scratch
+1. Install Basis OS, Raspbian GNU/Linux 11 (bullseye) has been tested
+2. Update and install necessary packages
+```console
+sudo apt update
+sudo apt upgrade
+sudo reboot
+sudo apt install can-utils build-essential cmake git
+```
+3. Add the following entries in /etc/rc.local
+```console
+ip link set can0 up type can bitrate 500000
+echo 16 > /sys/class/gpio/export
+echo "out" > /sys/class/gpio/gpio16/direction
+
+echo 22 > /sys/class/gpio/export
+echo "out" > /sys/class/gpio/gpio22/direction
+echo 1 > /sys/class/gpio/gpio22/value
+```
+4. Install ROS
+```console
+sudo apt install python3-empy libboost1.71-all-dev libtinyxml2-dev lz4 libroslz4-dev liblz4-dev libbz2-dev lbzip2 libgtest-dev libgpgme-dev libspnav-dev python3-rosdep python3-rosinstall-generator python3-vcstools ros-cmake-modules libpoco-dev 
+rosdep update
+mkdir ~/ros_catkin_ws
+cd ros_catkin_ws
+python -m rospkg.os_detect
+rosdep install -ay --os=debian:bullseye
+rosdep update
+rosinstall_generator ros_comm geometry_msgs sensor_msgs joystick_drivers diagnostic_updater --rosdistro noetic --deps --tar > noetic-ros_comm.rosinstall
+sudo ./src/catkin/bin/catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release --install-space /opt/ros/noetic -j4
+sudo reboot
+mkdir -p ~/catkin_ws/src
+cd ~/catkin_ws/src
+catkin_init_workspace
+git clone https://github.com/EduArt-Robotik/edu_drive.git
+cd ..
+catkin_make
+source devel/setup.bash
+```
+
+Now, the launch file should be started. Please adjust the parameters in edu_drive.yaml before.
+```console
+roslaunch launch/edu_drive.launch
+```
