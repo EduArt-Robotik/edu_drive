@@ -4,6 +4,7 @@
 #include "ros/ros.h"
 #include "sensor_msgs/Joy.h"
 #include "geometry_msgs/Twist.h"
+#include <std_srvs/SetBool.h>
 #include "MotorController.h"
 #include "CarrierBoard.h"
 
@@ -66,6 +67,8 @@ private:
 
     void controlMotors(float vFwd, float vLeft, float omega);
 
+    bool enableCallback(std_srvs::SetBool::Request& request, std_srvs::SetBool::Response& response);
+
     ros::NodeHandle     _nh;
     ros::Subscriber     _subJoy;
     ros::Subscriber     _subVel;
@@ -74,7 +77,9 @@ private:
     ros::Publisher      _pubRPM;
     ros::Publisher      _pubTemp;
     ros::Publisher      _pubVoltageMCU;
+    ros::Publisher      _pubCurrentMCU;
     ros::Publisher      _pubVoltageDrive;
+    ros::Publisher      _pubCurrentDrive;
     ros::Publisher      _pubIMU;
     ros::Publisher      _pubOrientation;
 
@@ -87,6 +92,7 @@ private:
     double _vMax;
     double _omegaMax;
 
+    bool _enabled;
     bool _verbosity;
 };
 
