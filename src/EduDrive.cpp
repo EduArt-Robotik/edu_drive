@@ -24,10 +24,7 @@ namespace edu
 
         // Publisher of carrier shield
         _pubTemp = _nh.advertise<std_msgs::Float32>("temperature", 1);
-        _pubVoltageMCU   = _nh.advertise<std_msgs::Float32>("voltageMCU", 1);
-        _pubCurrentMCU   = _nh.advertise<std_msgs::Float32>("currentMCU", 1);
-        _pubVoltageDrive = _nh.advertise<std_msgs::Float32>("voltageDrive", 1);
-        _pubCurrentDrive = _nh.advertise<std_msgs::Float32>("currentDrive", 1);
+        _pubVoltageSys = _nh.advertise<std_msgs::Float32>("voltageSys", 1);
         _pubIMU          = _nh.advertise<sensor_msgs::Imu>("imu", 1);
         _pubOrientation  = _nh.advertise<geometry_msgs::PoseStamped>("pose", 1);
 
@@ -104,7 +101,7 @@ namespace edu
     {
         ROS_INFO("Enabling robot");
 
-        float voltageDrive = _carrier->getVoltageDrive();
+        float voltageDrive = _carrier->getVoltageSys();
         
         if(voltageDrive < 3.0)
         {
@@ -229,7 +226,7 @@ namespace edu
 
     void EduDrive::receiveCAN()
     {
-        float voltageDrive = _carrier->getVoltageDrive();
+        float voltageSys = _carrier->getVoltageSys();
         
         std_msgs::Float32MultiArray msgRPM;
         std_msgs::ByteMultiArray msgEnabled;
@@ -246,7 +243,11 @@ namespace edu
             bool enableState = false;
             if(controllersInitialized)
             {
-                if(voltageDrive > 3.0)
+            	 if(voltageSys > 24.0)
+            	 {
+            	     (*it)->disable();
+            	 }
+                else if(voltageSys > 3.0)
                 {                    
                     if((*it)->checkConnectionStatus(200))
                     {
@@ -287,21 +288,9 @@ namespace edu
         msgTemperature.data = _carrier->getTemperature();
         _pubTemp.publish(msgTemperature);
 
-        std_msgs::Float32 msgVoltageMCU;
-        msgVoltageMCU.data = _carrier->getVoltageMCU();
-        _pubVoltageMCU.publish(msgVoltageMCU);
-
-        std_msgs::Float32 msgCurrentMCU;
-        msgCurrentMCU.data = _carrier->getCurrentMCU();
-        _pubCurrentMCU.publish(msgCurrentMCU);
-
-        std_msgs::Float32 msgVoltageDrive;
-        msgVoltageDrive.data = voltageDrive;
-        _pubVoltageDrive.publish(msgVoltageDrive);
-
-        std_msgs::Float32 msgCurrentDrive;
-        msgCurrentDrive.data = _carrier->getCurrentDrive();
-        _pubCurrentDrive.publish(msgCurrentDrive);
+        std_msgs::Float32 msgVoltageSys;
+        msgVoltageSys.data = voltageSys;
+        _pubVoltageSys.publish(msgVoltageSys);
 
         double q[4];
         _carrier->getOrientation(q);
