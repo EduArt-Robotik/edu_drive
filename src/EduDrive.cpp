@@ -60,12 +60,12 @@ namespace edu
 	         	double kw = kinematics[2];
 	         	if(fabs(kx)>1e-3)
 	         	{
-	            	float vMax = fabs(cp[i].rpmMax / 60.f * M_PI / kx);
+	            	float vMax = fabs(cp[i].rpmMax / 60.f * 2.0 * M_PI / kx);
 	            	if(vMax > _vMax) _vMax = vMax;
 	            }
 	            if(fabs(kw)>1e-3)
 	            {
-	            	float omegaMax = fabs(cp[i].rpmMax / 60.f * M_PI / kw);
+	            	float omegaMax = fabs(cp[i].rpmMax / 60.f * 2.0 * M_PI / kw);
 	            	if(omegaMax > _omegaMax) _omegaMax = omegaMax;
 		         }
             }
@@ -215,9 +215,9 @@ namespace edu
             w[0] = kinematics0[0] * vFwd + kinematics0[1] * vLeft + kinematics0[2] * omega;
             w[1] = kinematics1[0] * vFwd + kinematics1[1] * vLeft + kinematics1[2] * omega;
 
-            // Convert from rad/s to rpm
-            w[0] *= 60.f / M_PI;
-            w[1] *= 60.f / M_PI;
+            // Convert from rad/s to rpm (60 / 2PI)
+            w[0] *= 30.f / M_PI;
+            w[1] *= 30.f / M_PI;
             _mc[i]->setRPM(w);
             if (_verbosity)
                 std::cout << "#EduDrive Setting RPM for drive" << i << " to " << w[0] << " " << w[1] << std::endl;
