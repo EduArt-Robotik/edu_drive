@@ -224,7 +224,7 @@ namespace edu
                 }
             }
         }
-        std::cout << scaleMax << std::endl;
+
         for (unsigned int i = 0; i < _mc.size(); ++i)
         {
             std::vector<float> kinematics0 = _mc[i]->getMotorParams()[0].kinematics;
