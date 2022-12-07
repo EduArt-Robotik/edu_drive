@@ -206,7 +206,25 @@ namespace edu
     void EduDrive::controlMotors(float vFwd, float vLeft, float omega)
     {
         _lastCmd = ros::Time::now();
-            
+        
+        // Check if any motor controller tries to drive the motors above their maximum speed, i.e. scale > 1.f
+        float scaleMax = 1.f;
+        for (unsigned int i = 0; i < _mc.size(); ++i)
+        {
+            std::vector<MotorParams> params = _mc[i]->getMotorParams();
+            float rpmMax = _mc[i]->getRPMMax();
+            if(rpmMax>1e-3)
+            {
+                for(unsigned int j=0; j<2; j++)
+                {
+                    std::vector<float> kinematics = params[j].kinematics;
+                    float rpmAbs = fabs(kinematics[0] * vFwd + kinematics[1] * vLeft + kinematics[2] * omega) * 30.f / M_PI;
+                    float scale = rpmAbs / rpmMax;
+                    if(scale > scaleMax) scaleMax = scale;
+                }
+            }
+        }
+        std::cout << scaleMax << std::endl;
         for (unsigned int i = 0; i < _mc.size(); ++i)
         {
             std::vector<float> kinematics0 = _mc[i]->getMotorParams()[0].kinematics;
@@ -216,8 +234,8 @@ namespace edu
             w[1] = kinematics1[0] * vFwd + kinematics1[1] * vLeft + kinematics1[2] * omega;
 
             // Convert from rad/s to rpm (60 / 2PI)
-            w[0] *= 30.f / M_PI;
-            w[1] *= 30.f / M_PI;
+            w[0] *= 30.f / M_PI / scaleMax;
+            w[1] *= 30.f / M_PI / scaleMax;
             _mc[i]->setRPM(w);
             if (_verbosity)
                 std::cout << "#EduDrive Setting RPM for drive" << i << " to " << w[0] << " " << w[1] << std::endl;
