@@ -244,6 +244,11 @@ unsigned short MotorController::getCanId()
   return _cf.can_id & 0xF;
 }
 
+float MotorController::getRPMMax()
+{
+  return _params.rpmMax;
+}
+
 bool MotorController::setTimeout(unsigned short timeoutInMillis)
 {
   _cf.can_dlc = 3;
