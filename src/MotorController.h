@@ -222,6 +222,12 @@ namespace edu
     unsigned short getTimeout();
 
     /**
+     * Accessor to parameter representing the maximum revolutions of the driven wheel
+     * @return maximum revolutions per minute
+     */
+    float getRPMMax();
+
+    /**
      * Set gear ratio (factor between motor and wheel revolutions)
      * @param[in] gearRatio (motor rev) / (wheel rev) for motor 1 and 2
      * @return true==successful CAN transmission
