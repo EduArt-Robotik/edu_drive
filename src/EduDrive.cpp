@@ -25,11 +25,14 @@ namespace edu
         // Publisher of carrier shield
         _pubTemp = _nh.advertise<std_msgs::Float32>("temperature", 1);
         _pubVoltageSys = _nh.advertise<std_msgs::Float32>("voltageSys", 1);
+        _pubCurrentSys = _nh.advertise<std_msgs::Float32>("currentSys", 1);
         _pubIMU          = _nh.advertise<sensor_msgs::Imu>("imu", 1);
         _pubOrientation  = _nh.advertise<geometry_msgs::PoseStamped>("pose", 1);
 
 		
         _carrier = new CarrierBoard(&can, verbosity);
+        
+        _power = new PowerManagement(&can, verbosity);
         
         _vMax = 0.f;
 
@@ -109,16 +112,6 @@ namespace edu
             return;
         }
 
-        // This is added for the RPi version using GPIO16 to enable all motor controllers
-        int fd = open("/sys/class/gpio/gpio16/value", O_WRONLY);
-        if (fd == -1)
-        {
-            ROS_WARN_STREAM("Unable to enable motor controllers. It the GPIO16 pin configured as output?");
-            return;
-        }
-        write(fd, "1", 1);
-        close(fd);
-
         for (std::vector<MotorController *>::iterator it = std::begin(_mc); it != std::end(_mc); ++it)
         {
             if(!(*it)->isInitialized())
@@ -130,19 +123,6 @@ namespace edu
     void EduDrive::disable()
     {
         ROS_INFO("Disabling robot");
-
-        // This is added for the RPi version using GPIO16 to enable all motor controllers
-        int fd = open("/sys/class/gpio/gpio16/value", O_WRONLY);
-        if (fd == -1)
-        {
-            ROS_WARN_STREAM("Unable to disable motor controllers. It the GPIO16 pin configured as output?");
-            // At this point we go on to send at least the disable command via CAN.
-        }
-        else
-        {
-            write(fd, "0", 1);
-            close(fd);
-        }
 
         for (std::vector<MotorController *>::iterator it = std::begin(_mc); it != std::end(_mc); ++it)
             (*it)->disable();
@@ -244,7 +224,8 @@ namespace edu
 
     void EduDrive::receiveCAN()
     {
-        float voltageSys = _carrier->getVoltageSys();
+        float voltageSys = _power->getVoltageSys();
+        float currentSys = _power->getCurrentSys();
         
         std_msgs::Float32MultiArray msgRPM;
         std_msgs::ByteMultiArray msgEnabled;
@@ -309,6 +290,10 @@ namespace edu
         std_msgs::Float32 msgVoltageSys;
         msgVoltageSys.data = voltageSys;
         _pubVoltageSys.publish(msgVoltageSys);
+
+        std_msgs::Float32 msgCurrentSys;
+        msgCurrentSys.data = currentSys;
+        _pubCurrentSys.publish(msgCurrentSys);
 
         double q[4];
         _carrier->getOrientation(q);

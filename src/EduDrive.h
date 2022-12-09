@@ -7,6 +7,7 @@
 #include <std_srvs/SetBool.h>
 #include "MotorController.h"
 #include "CarrierBoard.h"
+#include "PowerManagement.h"
 
 namespace edu
 {
@@ -77,6 +78,7 @@ private:
     ros::Publisher      _pubRPM;
     ros::Publisher      _pubTemp;
     ros::Publisher      _pubVoltageSys;
+    ros::Publisher      _pubCurrentSys;
     ros::Publisher      _pubIMU;
     ros::Publisher      _pubOrientation;
 
@@ -85,6 +87,8 @@ private:
     std::vector<MotorController*>  _mc;
 
     CarrierBoard* _carrier;
+    
+    PowerManagement* _power;
 
     double _vMax;
     double _omegaMax;
