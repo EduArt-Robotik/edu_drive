@@ -80,6 +80,6 @@ namespace edu
     float _currentSys;
   };
 
-#endif /* _POWERMANAGEMENT_H_ */
-
 } // namespace
+
+#endif /* _POWERMANAGEMENT_H_ */

@@ -416,7 +416,6 @@ namespace edu
 
     long _usec;
   };
+} // namespace
 
 #endif /* _MOTORCONTROLLERCAN_H_ */
-
-} // namespace
