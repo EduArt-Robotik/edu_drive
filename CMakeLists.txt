@@ -15,7 +15,14 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-
+if(EXISTS "/usr/include/mraa/common.hpp")
+  message(STATUS "Found mraa installed at ${MRAA_INCLUDE_DIR}.")
+  add_compile_definitions(_WITH_MRAA)
+  set(HAVE_MRAA "TRUE")
+else()
+  message(STATUS "Couldn't find mraa, are you compiling on a IOT 2050 device? This node will not provide a usable interface.")
+  set(HAVE_MRAA "FALSE")
+endif()
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -133,8 +140,24 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(${PROJECT_NAME}_node src/edu_drive_node.cpp src/EduDrive.cpp src/MotorController.cpp src/CarrierBoard.cpp src/can/canprotocol.cpp src/can/SocketCAN.cpp src/can/SocketCANObserver.cpp)
+add_executable(${PROJECT_NAME}_node src/edu_drive_node.cpp
+												src/EduDrive.cpp
+												src/MotorController.cpp
+												src/CarrierBoard.cpp
+												src/IOTAdapter.cpp
+												src/can/canprotocol.cpp
+												src/can/SocketCAN.cpp
+												src/can/SocketCANObserver.cpp)
 
+add_executable(${PROJECT_NAME}_uart_node src/edu_drive_uart_node.cpp
+												src/EduDrive.cpp
+												src/MotorController.cpp
+												src/CarrierBoard.cpp
+												src/IOTAdapter.cpp
+												src/can/canprotocol.cpp
+												src/can/SocketCAN.cpp
+												src/can/SocketCANObserver.cpp)
+												
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -148,6 +171,12 @@ add_executable(${PROJECT_NAME}_node src/edu_drive_node.cpp src/EduDrive.cpp src/
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}_node
   ${catkin_LIBRARIES}
+  mraa
+)
+
+target_link_libraries(${PROJECT_NAME}_uart_node
+  ${catkin_LIBRARIES}
+  mraa
 )
 
 #############
