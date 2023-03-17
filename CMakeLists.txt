@@ -147,16 +147,13 @@ add_executable(${PROJECT_NAME}_node src/edu_drive_node.cpp
 												src/IOTAdapter.cpp
 												src/can/canprotocol.cpp
 												src/can/SocketCAN.cpp
-												src/can/SocketCANObserver.cpp)
+												src/can/SocketCANObserver.cpp
+												src/uart/SerialPort.cpp)
 
 add_executable(${PROJECT_NAME}_uart_node src/edu_drive_uart_node.cpp
-												src/EduDrive.cpp
-												src/MotorController.cpp
-												src/CarrierBoard.cpp
+												src/EduDriveUART.cpp
 												src/IOTAdapter.cpp
-												src/can/canprotocol.cpp
-												src/can/SocketCAN.cpp
-												src/can/SocketCANObserver.cpp)
+												src/uart/SerialPort.cpp)
 												
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the

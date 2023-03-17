@@ -33,45 +33,21 @@ IOTAdapter::IOTAdapter()
 {
    _timeCom = 0.0;
    _q.resize(4);
-#if _WITH_MRAA
-   _uart = new mraa::Uart(devPath);
-
-   if (_uart->setBaudRate(115200) != mraa::SUCCESS) {
-      std::cerr << "Error setting parity on UART" << std::endl;
-   }
-
-   if (_uart->setMode(8, mraa::UART_PARITY_NONE, 1) != mraa::SUCCESS) {
-      std::cerr << "Error setting parity on UART" << std::endl;
-   }
-
-   if (_uart->setFlowcontrol(false, false) != mraa::SUCCESS) {
-      std::cerr << "Error setting flow control UART" << std::endl;
-   }
-   
-   _uart->flush();
-#else
-   std::cerr << "UART interface not available. MRAA is missing!" << std::endl;
-#endif
+   _uart = new SerialPort(devPath, B115200);
 }
    
 IOTAdapter::~IOTAdapter()
 {
-#if _WITH_MRAA
    delete _uart;
-#endif
 }
 
+char* initCode = "EduArtRobotik!";
 void IOTAdapter::init()
 {
-#if _WITH_MRAA
-	_txBuf[0] = 'E';
-	_txBuf[1] = 'd';
-	_txBuf[2] = 'u';
-	_txBuf[3] = 'A';
-	_txBuf[4] = 'r';
-	_txBuf[5] = 't';
-	_uart->write((char*)_txBuf, 6);
-#endif
+	_txBuf[0] = 0xff;
+	for(int i=1; i<15; i++)
+		_txBuf[i] = initCode[i-1];
+	sendReceive();
 }
 
 bool IOTAdapter::enable()
@@ -88,23 +64,51 @@ bool IOTAdapter::disable()
    _txBuf[0] = 0xFF;
    _txBuf[1] = CMD_DISABLE;
    _txBuf[10] = 0xEE;
+   std::cout << "Sending disable command" << std::endl;
    sendReceive();
    return 1;
 }
 
+bool IOTAdapter::sync()
+{
+   _txBuf[0] = 0xFF;
+   _txBuf[1] = CMD_SYNC;
+   _txBuf[10] = 0xEE;
+   sendReceive();
+   return 1;
+}
+
+bool IOTAdapter::setRPM(float rpm[8])
+{
+  int vel[8];
+  for(int i=0; i<8; i++)
+    vel[i] = (int)(rpm[i]*100.f);
+  _txBuf[0] = 0xFF;
+  _txBuf[1] = CMD_MOTOR_SETRPM;
+  for(int i=0; i<8; i++)
+  {
+    _txBuf[2*i+3] = (char)(vel[i] >> 8) & 0xFF;
+    _txBuf[2*i+2] = (char)(vel[i])      & 0xFF;
+  }
+  //_txBuf[18] = 0x0;
+  sendReceive();
+  return 1;
+}
+
 void IOTAdapter::sendReceive()
 {
-#if _WITH_MRAA
     timeval clock;
     double now = 0.0;
     do
     {
        ::gettimeofday(&clock, 0);
        now = static_cast<double>(clock.tv_sec) + static_cast<double>(clock.tv_usec) * 1.0e-6;
-    }while((now - _timeCom) < 0.008);
+    }while((now - _timeCom) < 0.010);
     _timeCom = now;
-   _uart->write((char*)_txBuf, 11);
-   _uart->read(_rxBuf, 32);
+   _uart->send((char*)_txBuf, 18);
+   //usleep(1000);
+   return;
+   _uart->receive(_rxBuf, 32);
 
    if(!_rawdata)
    {
@@ -156,9 +160,6 @@ void IOTAdapter::sendReceive()
    _systemVoltage       = (float) voltage / 100.f;
    uint8_t current = _rxBuf[31];
    _loadCurrent = ((float) current)/20.f;
-#else
-   std::cerr << "Ignoring UART communication demand." << std::endl;
-#endif
 }
 
 } // namespace

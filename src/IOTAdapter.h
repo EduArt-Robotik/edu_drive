@@ -2,13 +2,9 @@
 #define __IOTADAPTER_H
 
 #include <vector>
-#if _WITH_MRAA
-#include "mraa/common.hpp"
-#include "mraa/uart.hpp"
-#else
 #include <stdint.h>
 #include <string.h>
-#endif
+#include "uart/SerialPort.h"
 
 namespace edu
 {
@@ -16,6 +12,8 @@ namespace edu
 // Common parameters
 #define CMD_ENABLE          0x01
 #define CMD_DISABLE         0x02
+#define CMD_MOTOR_SETRPM    0x11
+#define CMD_SYNC            0x13
 
 /**
  * @class IOTAdapter
@@ -53,15 +51,17 @@ public:
     */
    bool disable();
    
+   bool sync();
+   
+   bool setRPM(float rpm[8]);
+   
 private:
 
    void sendReceive();
 
-#if _WITH_MRAA
-   mraa::Uart* _uart;
-#endif
+   SerialPort* _uart;
 
-   char _txBuf[11];
+   char _txBuf[18];
    
    char _rxBuf[32];
 
