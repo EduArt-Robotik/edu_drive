@@ -9,7 +9,6 @@ project(edu_drive)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
-  joy
   roscpp
 )
 
@@ -104,7 +103,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES edu_drive
-#  CATKIN_DEPENDS geometry_msgs joy roscpp
+#  CATKIN_DEPENDS geometry_msgs roscpp
 #  DEPENDS system_lib
 )
 
@@ -146,7 +145,7 @@ add_executable(${PROJECT_NAME}_uart_node src/edu_drive_uart_node.cpp
 												src/EduDriveUART.cpp
 												src/IOTAdapter.cpp
 												src/uart/SerialPort.cpp)
-												
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
