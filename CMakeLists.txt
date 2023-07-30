@@ -9,7 +9,6 @@ project(edu_drive)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
-  joy
   roscpp
 )
 
@@ -105,7 +104,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES edu_drive
-#  CATKIN_DEPENDS geometry_msgs joy roscpp
+#  CATKIN_DEPENDS geometry_msgs roscpp
 #  DEPENDS system_lib
 )
 
